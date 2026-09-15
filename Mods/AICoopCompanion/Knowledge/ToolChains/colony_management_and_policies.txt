@@ -1,0 +1,11 @@
+# 作息、方案、活动区与基地维护关联链
+
+作息：只在不改变工作优先级的前提下使用 `timetable_all` 或 `timetable_hours` 安排睡眠、娱乐、工作和自由时间。先读取殖民者昼夜特性、伤病和当前安排；批量设置后再检查是否覆盖错误时段。
+
+医疗与自理：用 `medical_care` 设置允许药物级别；`self_tend` 只给有足够 Medicine、当前确有必要且没有更合适医生的人开启。敌人反应使用 `hostility_response`，但袭击当下仍由征召战斗链负责。
+
+方案：现有方案用 `assign_policy` 分配；需要新方案时先 `policy_create`，再用 `policy_edit` 调整真实 ThingDef，最后分配给 AI 殖民者。不要修改或分配玩家殖民者。
+
+活动区：已有安全区用 `allowed_area_assign`；需要临时安全区时先 `allowed_area_create` 创建，再分配 AI 殖民者。危险消失后恢复适当区域。
+
+基地维护：`roof` 建造或移除屋顶；`home_area` 精确设置居住区；`home_area_auto` 按殖民地建筑重算；`auto_rebuild` 控制自动重建；`floor` 放置地板蓝图；`temperature` 调整冷库或房间温控；`door_mode` 开关门或保持敞开。先读取目标 ID、区域和当前状态，避免重复切换。

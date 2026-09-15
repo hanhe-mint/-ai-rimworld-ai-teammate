@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ModMetaData>
+  <name>环世界ai队友</name>
+  <author>寒荷mint</author>
+  <packageId>local.aicoopcompanion</packageId>
+  <supportedVersions>
+    <li>1.6</li>
+  </supportedVersions>
+  <modDependencies>
+    <li>
+      <packageId>brrainz.harmony</packageId>
+      <displayName>Harmony</displayName>
+      <steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
+      <downloadUrl>https://github.com/pardeike/HarmonyRimWorld/releases</downloadUrl>
+    </li>
+  </modDependencies>
+  <loadAfter>
+    <li>brrainz.harmony</li>
+  </loadAfter>
+  <description>接入deepseek harness，让deepseek加入你的殖民地，和你一起在环世界生存。
+
+你和 AI 分别管理自己的殖民者，也可以开启共享控制。AI 直接读取游戏数据，安排种植、采集、建造、生产、研究和战斗。你可以在游戏或harness内和它聊天、提出需求，或回应它的求助。
+
+支持房间预设、分阶段攻略、工具权限管理、决策间隔调整和思考时暂停。攻略进度及相关记录随存档保存。
+
+使用要求：适用于环世界 1.6，需要本机运行 DeepSeek Harness 并加载附带插件；模型与 API 在 Harness 中配置。
+
+注意：这不是真人联机模组。AI 可能判断失误或操作失败，不能保证自动通关。部分 DLC 功能尚未支持，其他 Mod 的兼容性需要测试。建议备份存档；模型服务可能产生费用。</description>
+</ModMetaData>

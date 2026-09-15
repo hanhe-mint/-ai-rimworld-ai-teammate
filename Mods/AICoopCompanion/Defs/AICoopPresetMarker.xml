@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <ThingDef ParentName="BuildingBase">
+    <defName>AICoopPresetMarker</defName>
+    <label>预设房间标识</label>
+    <description>用于标识预设房间的编号和用途。</description>
+    <thingClass>AICoopCompanion.AICoopPresetMarker</thingClass>
+    <selectable>true</selectable>
+    <size>(1,1)</size>
+    <passability>Standable</passability>
+    <fillPercent>0.1</fillPercent>
+    <useHitPoints>false</useHitPoints>
+    <destroyable>false</destroyable>
+    <scatterableOnMapGen>false</scatterableOnMapGen>
+    <altitudeLayer>Building</altitudeLayer>
+    <statBases>
+      <WorkToBuild>0</WorkToBuild>
+      <MaxHitPoints>1</MaxHitPoints>
+      <Mass>1</Mass>
+      <Beauty>0</Beauty>
+    </statBases>
+    <graphicData>
+      <texPath>Things/Building/Furniture/PenMarker</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>(1,1)</drawSize>
+      <shadowData>
+        <volume>(0.2, 0.5, 0.2)</volume>
+        <offset>(0,0,-0.23)</offset>
+      </shadowData>
+    </graphicData>
+    <building>
+      <isInert>true</isInert>
+      <ai_chillDestination>false</ai_chillDestination>
+      <ai_neverTrashThis>true</ai_neverTrashThis>
+    </building>
+  </ThingDef>
+</Defs>

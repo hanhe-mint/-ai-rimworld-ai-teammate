@@ -1,0 +1,495 @@
+ROOM id=mini_prison purpose=迷你集体监狱 priority=5
+FOOTPRINT 13x13
+BUILD Wall 0 0 0 -
+BUILD Wall 0 4 0 -
+BUILD Wall 1 0 0 -
+BUILD Wall 2 0 0 -
+BUILD Wall 3 0 0 -
+BUILD Wall 4 0 0 -
+BUILD Wall 5 0 0 -
+BUILD Wall 7 0 0 -
+BUILD Wall 9 0 0 -
+BUILD Wall 10 0 0 -
+BUILD Wall 11 0 0 -
+BUILD Wall 12 0 0 -
+BUILD Wall 12 4 0 -
+BUILD Wall 0 1 0 -
+BUILD Wall 12 1 0 -
+BUILD Wall 0 2 0 -
+BUILD Wall 12 2 0 -
+BUILD Wall 0 5 0 -
+BUILD Wall 0 6 0 -
+BUILD Wall 1 6 0 -
+BUILD Wall 2 6 0 -
+BUILD Wall 3 6 0 -
+BUILD Wall 4 6 0 -
+BUILD Wall 5 6 0 -
+BUILD Wall 6 6 0 -
+BUILD Wall 7 6 0 -
+BUILD Wall 8 6 0 -
+BUILD Wall 9 6 0 -
+BUILD Wall 10 6 0 -
+BUILD Wall 11 6 0 -
+BUILD Wall 12 6 0 -
+BUILD Wall 12 5 0 -
+BUILD Door 0 3 1 WoodLog
+BUILD Door 12 3 1 WoodLog
+BUILD Wall 6 0 0 -
+BUILD Bed 1 5 2 WoodLog
+STATE bed 1 5 owner=prisoner medical=0
+BUILD Bed 2 5 2 WoodLog
+STATE bed 2 5 owner=prisoner medical=0
+BUILD Bed 3 5 2 WoodLog
+STATE bed 3 5 owner=prisoner medical=0
+BUILD Bed 4 5 2 WoodLog
+STATE bed 4 5 owner=prisoner medical=0
+BUILD Bed 5 5 2 WoodLog
+STATE bed 5 5 owner=prisoner medical=0
+BUILD Bed 6 5 2 WoodLog
+STATE bed 6 5 owner=prisoner medical=0
+BUILD Bed 7 5 2 WoodLog
+STATE bed 7 5 owner=prisoner medical=0
+BUILD Bed 8 5 2 WoodLog
+STATE bed 8 5 owner=prisoner medical=0
+BUILD Bed 9 5 2 WoodLog
+STATE bed 9 5 owner=prisoner medical=0
+BUILD Bed 10 5 2 WoodLog
+STATE bed 10 5 owner=prisoner medical=0
+BUILD Bed 11 5 2 WoodLog
+STATE bed 11 5 owner=prisoner medical=0
+BUILD HospitalBed 6 2 2 Steel
+STATE bed 6 2 owner=prisoner medical=1
+BUILD HospitalBed 5 2 2 Steel
+STATE bed 5 2 owner=prisoner medical=1
+BUILD HospitalBed 4 2 2 Steel
+STATE bed 4 2 owner=prisoner medical=1
+BUILD HospitalBed 3 2 2 Steel
+STATE bed 3 2 owner=prisoner medical=1
+BUILD HospitalBed 2 2 2 Steel
+STATE bed 2 2 owner=prisoner medical=1
+BUILD HospitalBed 1 2 2 Steel
+STATE bed 1 2 owner=prisoner medical=1
+BUILD VitalsMonitor 2 3 2 -
+BUILD VitalsMonitor 5 3 2 -
+BUILD HospitalBed 7 2 2 Steel
+STATE bed 7 2 owner=prisoner medical=1
+BUILD HospitalBed 8 2 2 Steel
+STATE bed 8 2 owner=prisoner medical=1
+BUILD Wall 8 0 0 -
+BUILD Table1x2c 11 1 3 WoodLog
+BUILD ChessTable 9 1 0 WoodLog
+BUILD DiningChair 9 2 2 WoodLog
+BUILD DiningChair 10 2 2 WoodLog
+BUILD DiningChair 11 2 2 WoodLog
+BUILD VitalsMonitor 7 3 2 -
+KNOWN_DEFS Wall,Door,Bed,HospitalBed,VitalsMonitor,Table1x2c,ChessTable,DiningChair
+FLOOR_HASH 34465 0 0
+FLOOR_HASH 65097 0 1
+FLOOR_HASH 65097 0 2
+FLOOR_HASH 59992 0 3
+FLOOR_HASH 56931 0 4
+FLOOR_HASH 56931 0 5
+FLOOR_HASH 61150 0 6
+FLOOR_HASH 61150 0 7
+FLOOR_HASH 61150 0 8
+FLOOR_HASH 61150 0 9
+FLOOR_HASH 30324 0 10
+FLOOR_HASH 30324 0 11
+FLOOR_HASH 30324 0 12
+FLOOR_HASH 34465 1 0
+FLOOR_HASH 59992 1 1
+FLOOR_HASH 59992 1 2
+FLOOR_HASH 59992 1 3
+FLOOR_HASH 59992 1 4
+FLOOR_HASH 59992 1 5
+FLOOR_HASH 56931 1 6
+FLOOR_HASH 61150 1 7
+FLOOR_HASH 61150 1 8
+FLOOR_HASH 61150 1 9
+FLOOR_HASH 61150 1 10
+FLOOR_HASH 30324 1 11
+FLOOR_HASH 30324 1 12
+FLOOR_HASH 34465 2 0
+FLOOR_HASH 59992 2 1
+FLOOR_HASH 59992 2 2
+FLOOR_HASH 59992 2 3
+FLOOR_HASH 59992 2 4
+FLOOR_HASH 59992 2 5
+FLOOR_HASH 56931 2 6
+FLOOR_HASH 56931 2 7
+FLOOR_HASH 61150 2 8
+FLOOR_HASH 61150 2 9
+FLOOR_HASH 61150 2 10
+FLOOR_HASH 61150 2 11
+FLOOR_HASH 30324 2 12
+FLOOR_HASH 34465 3 0
+FLOOR_HASH 59992 3 1
+FLOOR_HASH 59992 3 2
+FLOOR_HASH 59992 3 3
+FLOOR_HASH 59992 3 4
+FLOOR_HASH 59992 3 5
+FLOOR_HASH 56931 3 6
+FLOOR_HASH 56931 3 7
+FLOOR_HASH 56931 3 8
+FLOOR_HASH 61150 3 9
+FLOOR_HASH 61150 3 10
+FLOOR_HASH 61150 3 11
+FLOOR_HASH 61150 3 12
+FLOOR_HASH 34465 4 0
+FLOOR_HASH 59992 4 1
+FLOOR_HASH 59992 4 2
+FLOOR_HASH 59992 4 3
+FLOOR_HASH 59992 4 4
+FLOOR_HASH 59992 4 5
+FLOOR_HASH 56931 4 6
+FLOOR_HASH 56931 4 7
+FLOOR_HASH 56931 4 8
+FLOOR_HASH 56931 4 9
+FLOOR_HASH 61150 4 10
+FLOOR_HASH 61150 4 11
+FLOOR_HASH 61150 4 12
+FLOOR_HASH 34465 5 0
+FLOOR_HASH 59992 5 1
+FLOOR_HASH 59992 5 2
+FLOOR_HASH 59992 5 3
+FLOOR_HASH 59992 5 4
+FLOOR_HASH 59992 5 5
+FLOOR_HASH 56931 5 6
+FLOOR_HASH 56931 5 7
+FLOOR_HASH 56931 5 8
+FLOOR_HASH 56931 5 9
+FLOOR_HASH 56931 5 10
+FLOOR_HASH 61150 5 11
+FLOOR_HASH 61150 5 12
+FLOOR_HASH 34465 6 0
+FLOOR_HASH 59992 6 1
+FLOOR_HASH 59992 6 2
+FLOOR_HASH 59992 6 3
+FLOOR_HASH 59992 6 4
+FLOOR_HASH 59992 6 5
+FLOOR_HASH 56931 6 6
+FLOOR_HASH 56931 6 7
+FLOOR_HASH 56931 6 8
+FLOOR_HASH 56931 6 9
+FLOOR_HASH 56931 6 10
+FLOOR_HASH 56931 6 11
+FLOOR_HASH 61150 6 12
+FLOOR_HASH 34465 7 0
+FLOOR_HASH 59992 7 1
+FLOOR_HASH 59992 7 2
+FLOOR_HASH 59992 7 3
+FLOOR_HASH 59992 7 4
+FLOOR_HASH 59992 7 5
+FLOOR_HASH 56931 7 6
+FLOOR_HASH 56931 7 7
+FLOOR_HASH 56931 7 8
+FLOOR_HASH 56931 7 9
+FLOOR_HASH 56931 7 10
+FLOOR_HASH 56931 7 11
+FLOOR_HASH 56931 7 12
+FLOOR_HASH 34465 8 0
+FLOOR_HASH 59992 8 1
+FLOOR_HASH 59992 8 2
+FLOOR_HASH 59992 8 3
+FLOOR_HASH 59992 8 4
+FLOOR_HASH 59992 8 5
+FLOOR_HASH 56931 8 6
+FLOOR_HASH 56931 8 7
+FLOOR_HASH 56931 8 8
+FLOOR_HASH 56931 8 9
+FLOOR_HASH 56931 8 10
+FLOOR_HASH 56931 8 11
+FLOOR_HASH 56931 8 12
+FLOOR_HASH 34465 9 0
+FLOOR_HASH 59992 9 1
+FLOOR_HASH 59992 9 2
+FLOOR_HASH 59992 9 3
+FLOOR_HASH 59992 9 4
+FLOOR_HASH 59992 9 5
+FLOOR_HASH 56931 9 6
+FLOOR_HASH 56931 9 7
+FLOOR_HASH 56931 9 8
+FLOOR_HASH 56931 9 9
+FLOOR_HASH 56931 9 10
+FLOOR_HASH 56931 9 11
+FLOOR_HASH 56931 9 12
+FLOOR_HASH 34465 10 0
+FLOOR_HASH 59992 10 1
+FLOOR_HASH 59992 10 2
+FLOOR_HASH 59992 10 3
+FLOOR_HASH 59992 10 4
+FLOOR_HASH 59992 10 5
+FLOOR_HASH 65097 10 6
+FLOOR_HASH 56931 10 7
+FLOOR_HASH 56931 10 8
+FLOOR_HASH 56931 10 9
+FLOOR_HASH 56931 10 10
+FLOOR_HASH 56931 10 11
+FLOOR_HASH 56931 10 12
+FLOOR_HASH 34465 11 0
+FLOOR_HASH 59992 11 1
+FLOOR_HASH 59992 11 2
+FLOOR_HASH 59992 11 3
+FLOOR_HASH 59992 11 4
+FLOOR_HASH 59992 11 5
+FLOOR_HASH 65097 11 6
+FLOOR_HASH 56931 11 7
+FLOOR_HASH 56931 11 8
+FLOOR_HASH 56931 11 9
+FLOOR_HASH 56931 11 10
+FLOOR_HASH 56931 11 11
+FLOOR_HASH 56931 11 12
+FLOOR_HASH 34465 12 0
+FLOOR_HASH 34465 12 1
+FLOOR_HASH 34465 12 2
+FLOOR_HASH 59992 12 3
+FLOOR_HASH 34465 12 4
+FLOOR_HASH 34465 12 5
+FLOOR_HASH 65097 12 6
+FLOOR_HASH 65097 12 7
+FLOOR_HASH 56931 12 8
+FLOOR_HASH 56931 12 9
+FLOOR_HASH 56931 12 10
+FLOOR_HASH 56931 12 11
+FLOOR_HASH 56931 12 12
+ZONE home 0 0 - -
+ZONE home 0 1 - -
+ZONE home 0 2 - -
+ZONE home 0 3 - -
+ZONE home 0 4 - -
+ZONE home 0 5 - -
+ZONE home 0 6 - -
+ZONE home 0 7 - -
+ZONE home 0 8 - -
+ZONE home 0 9 - -
+ZONE home 0 10 - -
+ZONE home 0 12 - -
+ZONE home 1 0 - -
+ZONE home 1 1 - -
+ZONE home 1 2 - -
+ZONE home 1 3 - -
+ZONE home 1 4 - -
+ZONE home 1 5 - -
+ZONE home 1 6 - -
+ZONE home 1 7 - -
+ZONE home 1 8 - -
+ZONE home 1 9 - -
+ZONE home 1 10 - -
+ZONE home 1 12 - -
+ZONE home 2 0 - -
+ZONE home 2 1 - -
+ZONE home 2 2 - -
+ZONE home 2 3 - -
+ZONE home 2 4 - -
+ZONE home 2 5 - -
+ZONE home 2 6 - -
+ZONE home 2 7 - -
+ZONE home 2 8 - -
+ZONE home 2 9 - -
+ZONE home 2 10 - -
+ZONE home 2 12 - -
+ZONE home 3 0 - -
+ZONE home 3 1 - -
+ZONE home 3 2 - -
+ZONE home 3 3 - -
+ZONE home 3 4 - -
+ZONE home 3 5 - -
+ZONE home 3 6 - -
+ZONE home 3 7 - -
+ZONE home 3 8 - -
+ZONE home 3 9 - -
+ZONE home 3 10 - -
+ZONE home 3 12 - -
+ZONE home 4 0 - -
+ZONE home 4 1 - -
+ZONE home 4 2 - -
+ZONE home 4 3 - -
+ZONE home 4 4 - -
+ZONE home 4 5 - -
+ZONE home 4 6 - -
+ZONE home 4 7 - -
+ZONE home 4 8 - -
+ZONE home 4 9 - -
+ZONE home 4 10 - -
+ZONE home 4 12 - -
+ZONE home 5 0 - -
+ZONE home 5 1 - -
+ZONE home 5 2 - -
+ZONE home 5 3 - -
+ZONE home 5 4 - -
+ZONE home 5 5 - -
+ZONE home 5 6 - -
+ZONE home 5 7 - -
+ZONE home 5 8 - -
+ZONE home 5 9 - -
+ZONE home 5 10 - -
+ZONE home 5 12 - -
+ZONE home 6 0 - -
+ZONE home 6 1 - -
+ZONE home 6 2 - -
+ZONE home 6 3 - -
+ZONE home 6 4 - -
+ZONE home 6 5 - -
+ZONE home 6 6 - -
+ZONE home 6 7 - -
+ZONE home 6 8 - -
+ZONE home 6 9 - -
+ZONE home 6 10 - -
+ZONE home 7 0 - -
+ZONE home 7 1 - -
+ZONE home 7 2 - -
+ZONE home 7 3 - -
+ZONE home 7 4 - -
+ZONE home 7 5 - -
+ZONE home 7 6 - -
+ZONE home 7 7 - -
+ZONE home 7 8 - -
+ZONE home 7 9 - -
+ZONE home 7 10 - -
+ZONE home 8 0 - -
+ZONE home 8 1 - -
+ZONE home 8 2 - -
+ZONE home 8 3 - -
+ZONE home 8 4 - -
+ZONE home 8 5 - -
+ZONE home 8 6 - -
+ZONE home 8 7 - -
+ZONE home 8 8 - -
+ZONE home 8 9 - -
+ZONE home 8 10 - -
+ZONE home 9 0 - -
+ZONE home 9 1 - -
+ZONE home 9 2 - -
+ZONE home 9 3 - -
+ZONE home 9 4 - -
+ZONE home 9 5 - -
+ZONE home 9 6 - -
+ZONE home 9 7 - -
+ZONE home 9 8 - -
+ZONE home 9 9 - -
+ZONE home 9 10 - -
+ZONE home 10 0 - -
+ZONE home 10 1 - -
+ZONE home 10 2 - -
+ZONE home 10 3 - -
+ZONE home 10 4 - -
+ZONE home 10 5 - -
+ZONE home 10 6 - -
+ZONE home 10 7 - -
+ZONE home 10 8 - -
+ZONE home 10 9 - -
+ZONE home 10 10 - -
+ZONE home 11 0 - -
+ZONE home 11 1 - -
+ZONE home 11 2 - -
+ZONE home 11 3 - -
+ZONE home 11 4 - -
+ZONE home 11 5 - -
+ZONE home 11 6 - -
+ZONE home 11 7 - -
+ZONE home 11 8 - -
+ZONE home 11 9 - -
+ZONE home 11 10 - -
+ZONE home 12 0 - -
+ZONE home 12 1 - -
+ZONE home 12 2 - -
+ZONE home 12 3 - -
+ZONE home 12 4 - -
+ZONE home 12 5 - -
+ZONE home 12 6 - -
+ZONE home 12 7 - -
+ZONE home 12 8 - -
+ZONE home 12 9 - -
+ZONE home 12 10 - -
+ZONE build_roof 0 0 - -
+ZONE build_roof 0 1 - -
+ZONE build_roof 0 2 - -
+ZONE build_roof 0 3 - -
+ZONE build_roof 0 4 - -
+ZONE build_roof 0 5 - -
+ZONE build_roof 0 6 - -
+ZONE build_roof 1 0 - -
+ZONE build_roof 1 1 - -
+ZONE build_roof 1 2 - -
+ZONE build_roof 1 3 - -
+ZONE build_roof 1 4 - -
+ZONE build_roof 1 5 - -
+ZONE build_roof 1 6 - -
+ZONE build_roof 2 0 - -
+ZONE build_roof 2 1 - -
+ZONE build_roof 2 2 - -
+ZONE build_roof 2 3 - -
+ZONE build_roof 2 4 - -
+ZONE build_roof 2 5 - -
+ZONE build_roof 2 6 - -
+ZONE build_roof 3 0 - -
+ZONE build_roof 3 1 - -
+ZONE build_roof 3 2 - -
+ZONE build_roof 3 3 - -
+ZONE build_roof 3 4 - -
+ZONE build_roof 3 5 - -
+ZONE build_roof 3 6 - -
+ZONE build_roof 4 0 - -
+ZONE build_roof 4 1 - -
+ZONE build_roof 4 2 - -
+ZONE build_roof 4 3 - -
+ZONE build_roof 4 4 - -
+ZONE build_roof 4 5 - -
+ZONE build_roof 4 6 - -
+ZONE build_roof 5 0 - -
+ZONE build_roof 5 1 - -
+ZONE build_roof 5 2 - -
+ZONE build_roof 5 3 - -
+ZONE build_roof 5 4 - -
+ZONE build_roof 5 5 - -
+ZONE build_roof 5 6 - -
+ZONE build_roof 6 0 - -
+ZONE build_roof 6 1 - -
+ZONE build_roof 6 2 - -
+ZONE build_roof 6 3 - -
+ZONE build_roof 6 4 - -
+ZONE build_roof 6 5 - -
+ZONE build_roof 6 6 - -
+ZONE build_roof 7 0 - -
+ZONE build_roof 7 1 - -
+ZONE build_roof 7 2 - -
+ZONE build_roof 7 3 - -
+ZONE build_roof 7 4 - -
+ZONE build_roof 7 5 - -
+ZONE build_roof 7 6 - -
+ZONE build_roof 8 0 - -
+ZONE build_roof 8 1 - -
+ZONE build_roof 8 2 - -
+ZONE build_roof 8 3 - -
+ZONE build_roof 8 4 - -
+ZONE build_roof 8 5 - -
+ZONE build_roof 8 6 - -
+ZONE build_roof 9 0 - -
+ZONE build_roof 9 1 - -
+ZONE build_roof 9 2 - -
+ZONE build_roof 9 3 - -
+ZONE build_roof 9 4 - -
+ZONE build_roof 9 5 - -
+ZONE build_roof 9 6 - -
+ZONE build_roof 10 0 - -
+ZONE build_roof 10 1 - -
+ZONE build_roof 10 2 - -
+ZONE build_roof 10 3 - -
+ZONE build_roof 10 4 - -
+ZONE build_roof 10 5 - -
+ZONE build_roof 10 6 - -
+ZONE build_roof 11 0 - -
+ZONE build_roof 11 1 - -
+ZONE build_roof 11 2 - -
+ZONE build_roof 11 3 - -
+ZONE build_roof 11 4 - -
+ZONE build_roof 11 5 - -
+ZONE build_roof 11 6 - -
+ZONE build_roof 12 0 - -
+ZONE build_roof 12 1 - -
+ZONE build_roof 12 2 - -
+ZONE build_roof 12 3 - -
+ZONE build_roof 12 4 - -
+ZONE build_roof 12 5 - -
+ZONE build_roof 12 6 - -
+END_ROOM

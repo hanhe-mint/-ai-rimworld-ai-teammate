@@ -1,0 +1,9 @@
+# 种植、收获与仓储关联链
+
+水稻：读取 `RICE_FERTILITY_TOP`、可种植地形和殖民者人数 -> 从安全且靠近基地的最高肥力格调用 `grow_fertile` -> 工具只扩展到上下左右相连的同级最高肥力土地 -> 检查面积是否达到每名殖民者至少 13 格。只有连续肥沃地不合适或必须限制面积时才用 `grow_rectangle`。
+
+野外资源：树木使用 `designate_area(action=chop)`；成熟作物和可收获野生植物使用 `harvest`；非树植物才使用 `cut`。不要用 `cut` 伐树，也不要为了清地清除普通杂草。
+
+仓储：普通资源使用 `stockpile`，石块使用至少 7x7 的 `dump_stockpile`。发布 `haul_chunks` 时必须已经存在临时垃圾区；`TEMP_DUMP_ZONE pending_chunk_haul=0` 后用 `storage_delete_dump` 删除。用 `storage_priority`、`storage_category`、`storage_dedicated` 调整用途；需要单独允许 ThingDef 时用 `storage_allow`，彻底重设过滤前才用 `storage_clear`。所有操作先核对区域 ID。
+
+长期维护：持续比较食物库存、作物生长、腐败风险与人口变化；一次播种或一次收获不代表食物链永久完成。

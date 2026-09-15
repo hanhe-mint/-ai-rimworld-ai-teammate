@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <MainButtonDef>
+    <defName>AICoopLog</defName>
+    <label>AI 协作</label>
+    <description>查看 AI 协作状态、请求与执行日志。</description>
+    <workerClass>RimWorld.MainButtonWorker_ToggleTab</workerClass>
+    <tabWindowClass>AICoopCompanion.AICoopLogTab</tabWindowClass>
+    <order>70</order>
+  </MainButtonDef>
+</Defs>

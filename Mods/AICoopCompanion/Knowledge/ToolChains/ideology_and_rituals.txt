@@ -1,0 +1,7 @@
+# 文化与仪式关联链
+
+先确认 Ideology 已启用并读取可用仪式、active obligation、目标与必需角色 -> 检查 `TOOL_PERMISSIONS` -> 允许时使用 `ritual`，询问时先 `request_player` -> 需要提高文化一致性时使用 `C mapID cultureChair all` 或指定椅子 ThingID，将可用椅子切换为当前主文化样式 -> 启动后由原版流程接管，仪式进行中不得重复启动。
+
+只自动安排 AI 殖民者。缺玩家专属角色、特殊目标、派系许可或未实装交互时使用 `request_player`，不能用伪造 ID 试错。
+
+仪式失败、目标无效或角色不足必须保留原始拒绝信息，并在下一次决策中修正或请求玩家。
