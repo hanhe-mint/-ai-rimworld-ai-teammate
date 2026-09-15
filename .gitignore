@@ -1,0 +1,29 @@
+# Private/local runtime state
+install-state.json
+HarnessHome/
+UserData/
+.dsh/
+.agent-presets/
+.env
+.env.*
+*.key
+*.pem
+*.log
+*.rws
+Player.log
+__pycache__/
+*.pyc
+
+# Generated app runtime and packages
+node_modules/
+Runtime/
+downloads/
+_release_work/
+*.zip
+
+# Build output (not compiler/reference dependencies)
+Mods/AICoopCompanion/Assemblies/AICoopCompanion.dll
+*.pdb
+.vs/
+obj/
+bin/

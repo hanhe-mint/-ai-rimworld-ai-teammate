@@ -1,0 +1,19 @@
+第三方依赖与发布注意
+
+玩家版：
+Python 3.14.0 Windows x64 embedded，来自python.org，用于CLI与插件桥接。
+许可见Runtime/Python/LICENSE.txt。
+独立Harmony Mod 2.4.2.0，来自https://github.com/pardeike/HarmonyRimWorld/releases/tag/v2.4.2.0。
+许可随OptionalMods/Harmony保留。已有适配1.6的Harmony时不要重复安装。
+本Mod的Assemblies内不附带0Harmony.dll。
+DeepSeek Harness由玩家自行安装，本交付不包含DSH、Node或其npm依赖。
+
+源码版：
+packages/compilers：Microsoft.Net.Compilers.Toolset 4.8.0，NuGet来源，Roslyn及第三方许可随附。
+packages/net471：Microsoft.NETFramework.ReferenceAssemblies.net471 1.0.3，仅编译引用，不是系统运行时。
+packages/harmony：Lib.Harmony 2.3.3，仅供编译，不复制进Mod。
+各依赖许可证保持原位，不统一改为Mod许可。
+
+不包含游戏本体、游戏程序集、DLC、存档、账户、API密钥、模型或额度。
+未为整个Mod指定新许可证。插件已有许可声明不代表整个工程自动取得相同许可。
+公开分发前请确认图标、攻略、预设等素材的权利，并决定整体开源许可。
