@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>Microsoft.Net.Compilers.Toolset</id>
+    <version>4.8.0</version>
+    <authors>Microsoft</authors>
+    <developmentDependency>true</developmentDependency>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+    <icon>Icon.png</icon>
+    <projectUrl>https://github.com/dotnet/roslyn</projectUrl>
+    <description>.NET Compilers Toolset Package.
+      Referencing this package will cause the project to be built using the C# and Visual Basic compilers contained in the package, as opposed to the version installed with MSBuild.
+
+      This package is primarily intended as a method for rapidly shipping hotfixes to customers. Using it as a long term solution for providing newer compilers on older MSBuild installations is explicitly not supported. That can and will break on a regular basis.
+
+      The supported mechanism for providing new compilers in a build enviroment is updating to the newer .NET SDK or Visual Studio Build Tools SKU.
+
+      This package requires either MSBuild 16.3 and .NET Desktop 4.7.2+ or .NET Core 2.1+
+
+      
+    
+      More details at https://aka.ms/roslyn-packages
+      This package was built from the source at https://github.com/dotnet/roslyn/commit/e091728607ca0fc9efca55ccfb3e59259c6b5a0a.</description>
+    <copyright>© Microsoft Corporation. All rights reserved.</copyright>
+    <tags>Roslyn CodeAnalysis Compiler CSharp VB VisualBasic Parser Scanner Lexer Emit CodeGeneration Metadata IL Compilation Scripting Syntax Semantics</tags>
+    <serviceable>true</serviceable>
+    <repository type="git" url="https://github.com/dotnet/roslyn" commit="e091728607ca0fc9efca55ccfb3e59259c6b5a0a" />
+    <dependencies>
+      <group targetFramework=".NETFramework4.7.2" />
+      <group targetFramework="net6.0" />
+    </dependencies>
+  </metadata>
+</package>

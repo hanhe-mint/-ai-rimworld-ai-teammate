@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?><coreProperties xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"><dc:creator>Microsoft</dc:creator><dc:description>.NET Compilers Toolset Package.
+      Referencing this package will cause the project to be built using the C# and Visual Basic compilers contained in the package, as opposed to the version installed with MSBuild.
+
+      This package is primarily intended as a method for rapidly shipping hotfixes to customers. Using it as a long term solution for providing newer compilers on older MSBuild installations is explicitly not supported. That can and will break on a regular basis.
+
+      The supported mechanism for providing new compilers in a build enviroment is updating to the newer .NET SDK or Visual Studio Build Tools SKU.
+
+      This package requires either MSBuild 16.3 and .NET Desktop 4.7.2+ or .NET Core 2.1+
+
+      
+    
+      More details at https://aka.ms/roslyn-packages
+      This package was built from the source at https://github.com/dotnet/roslyn/commit/e091728607ca0fc9efca55ccfb3e59259c6b5a0a.</dc:description><dc:identifier>Microsoft.Net.Compilers.Toolset</dc:identifier><version>4.8.0</version><keywords>Roslyn CodeAnalysis Compiler CSharp VB VisualBasic Parser Scanner Lexer Emit CodeGeneration Metadata IL Compilation Scripting Syntax Semantics</keywords><lastModifiedBy>NuGet.Build.Tasks.Pack, Version=6.8.0.41, Culture=neutral, PublicKeyToken=31bf3856ad364e35;Microsoft Windows NT 10.0.20348.0;.NET Framework 4.7.2</lastModifiedBy></coreProperties>
