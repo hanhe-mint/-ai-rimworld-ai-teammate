@@ -94,6 +94,17 @@ namespace AICoopCompanion
             if (pawn != null) AIDraftIntents[pawn.thingIDNumber] = drafted;
         }
 
+        internal static void YieldToPlayer(Pawn pawn)
+        {
+            if (pawn == null) return;
+            int id = pawn.thingIDNumber;
+            Active.Remove(id);
+            AIDrafted.Remove(id);
+            AIDraftIntents.Remove(id);
+            ManualTurretAssignments.Remove(id);
+            PreviousDrafted[id] = false;
+        }
+
         // Called from the draft setter so the test feature also works while the game is paused.
         public static void NotifyDraftChanged(Pawn pawn, bool drafted)
         {
@@ -102,7 +113,7 @@ namespace AICoopCompanion
             // Normal operation only kites AI-owned colonists.  The temporary
             // player-draft test switch intentionally allows player-owned
             // colonists through the same path.
-            if (ownership == null || !ownership.IsAI(pawn))
+            if (ownership == null || !ownership.CanAIControl(pawn))
             {
                 PreviousDrafted.Remove(pawn.thingIDNumber);
                 Active.Remove(pawn.thingIDNumber);
@@ -163,7 +174,7 @@ namespace AICoopCompanion
             {
                 if (pawn == null || pawn.Map == null || !pawn.Spawned || pawn.Dead) continue;
                 AICoopGameComponent ownership = AICoopGameComponent.Current;
-                if (ownership == null || !ownership.IsAI(pawn))
+                if (ownership == null || !ownership.CanAIControl(pawn))
                 {
                     PreviousDrafted.Remove(pawn.thingIDNumber);
                     Active.Remove(pawn.thingIDNumber);
@@ -236,7 +247,7 @@ namespace AICoopCompanion
                 List<Pawn> enemies = map.mapPawns.AllPawnsSpawned.Where(IsHostileTarget).ToList();
                 bool highThreat = enemies.Count >= ManualTurretEnemyThreshold && IsHighRaidThreat(map, tick);
                 List<Pawn> aiPawns = map.mapPawns.FreeColonistsSpawned
-                    .Where(pawn => pawn != null && component.IsAI(pawn) && pawn.Drafted && !pawn.Downed && pawn.jobs != null)
+                    .Where(pawn => pawn != null && component.CanAIControl(pawn) && pawn.Drafted && !pawn.Downed && pawn.jobs != null)
                     .ToList();
                 if (highThreat)
                 {

@@ -1,0 +1,19 @@
+DSH 0.1.7-alpha.1 新版预设注册
+
+已核对0.1.7-alpha.1：不再扫描旧.agent-presets目录。旧版install.ps1只供旧DSH使用。
+新版应运行同目录install-modern.ps1；不修改DSH核心，只在指定Home的profiles/web/cordis.patch.yml添加一个标记区块。
+
+关闭DSH后，在PowerShell运行（替换所有示例路径）：
+powershell -NoProfile -ExecutionPolicy Bypass -File "D:\Games\RimWorld\Mods\AICoopCompanion\DeepSeekHarnessPlugin\install-modern.ps1" -DshUserRoot "D:\MyDSHHome" -PythonCommand "C:\Python314\python.exe"
+
+如使用附带嵌入式Python，PythonCommand填玩家版Runtime\Python\python.exe，并先按原手动教程配置python314._pth的插件目录。
+默认Profile为web；其他profile可用-Profile指定，必须先启动过该profile。
+安装后重启DSH，或在启用了live reload的版本刷新网页，再用“环世界 AI 队友”预设新建会话。旧会话不自动换预设。
+原模型、其他预设配置不会被覆盖。重复运行只更新本插件标记区块。
+
+新版卸载：退出DSH，仅从对应profile的cordis.patch.yml中删除以下两个标记及它们之间的完整区块：
+# BEGIN rimworld-ai-coop managed preset
+# END rimworld-ai-coop managed preset
+不要删整个cordis.patch.yml，否则会丢失个人模型和界面设置。
+旧版02-卸载脚本只处理.agent-presets下的预设，不能移除新版注册；新版注册请先按上述步骤移除。
+本说明对应已检查的0.1.7-alpha.1，不保证所有未来版本接口不变。

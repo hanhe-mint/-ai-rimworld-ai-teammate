@@ -1447,7 +1447,7 @@ namespace AICoopCompanion
             Pawn patient;
             if ((parts.Length != 5 && parts.Length != 6) || !Int32.TryParse(parts[3], out pawnId) ||
                 (patient = map.mapPawns.AllPawnsSpawned.FirstOrDefault(pawn => pawn.thingIDNumber == pawnId)) == null ||
-                !AICoopGameComponent.Current.IsAI(patient) || patient.health == null)
+                !AICoopGameComponent.Current.CanAIControl(patient) || patient.health == null)
             {
                 Log("[拒绝] C surgery 格式：C mapID surgery AI患者ID recipeDefName [BodyPartDefName]。");
                 return;
@@ -1873,19 +1873,19 @@ namespace AICoopCompanion
         private static IEnumerable<Pawn> AIPawns(Map map)
         {
             AICoopGameComponent component = AICoopGameComponent.Current;
-            return component == null ? Enumerable.Empty<Pawn>() : map.mapPawns.FreeColonistsSpawned.Where(component.IsAI);
+            return component == null ? Enumerable.Empty<Pawn>() : map.mapPawns.FreeColonistsSpawned.Where(component.CanAIControl);
         }
 
         private static bool IsAIPawn(Pawn pawn)
         {
-            return pawn != null && AICoopGameComponent.Current != null && AICoopGameComponent.Current.IsAI(pawn);
+            return pawn != null && AICoopGameComponent.Current != null && AICoopGameComponent.Current.CanAIControl(pawn);
         }
 
         private static bool TryAIPawn(Map map, int pawnId, out Pawn result)
         {
             AICoopGameComponent component = AICoopGameComponent.Current;
             result = map.mapPawns.FreeColonistsSpawned.FirstOrDefault(pawn => pawn.thingIDNumber == pawnId);
-            return result != null && component != null && component.IsAI(result);
+            return result != null && component != null && component.CanAIControl(result);
         }
 
         private static bool TryStockpile(Map map, string id, out Zone_Stockpile result)

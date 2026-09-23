@@ -14,7 +14,7 @@ namespace AICoopCompanion
         {
             if (parts.Length < 3)
             {
-                Log("[拒绝] WORLD 格式：caravan|move|load|launch|trade|quest。");
+                Log("[拒绝] WORLD 格式：caravan|move|load|launch|trade。");
                 return;
             }
             switch (parts[1].ToLowerInvariant())
@@ -24,7 +24,6 @@ namespace AICoopCompanion
                 case "load": LoadTransporter(parts, line); break;
                 case "launch": LaunchTransporter(parts, line); break;
                 case "trade": Trade(parts, line); break;
-                case "quest": HandleQuest(parts, line); break;
                 default: Log("[拒绝] 未知 WORLD 操作：" + parts[1]); break;
             }
         }
@@ -34,13 +33,17 @@ namespace AICoopCompanion
             if (Find.World == null || Find.WorldObjects == null) return "WORLD_STATUS unavailable";
             System.Text.StringBuilder result = new System.Text.StringBuilder();
             result.AppendLine("TRADE_MODE " + (AICoopMod.Settings == null || AICoopMod.Settings.tradeMode == AICoopTradeMode.PlayerWindow ? "player_window" : "ai") + "；player_window 会打开原版贸易窗口并等待玩家操作，ai 才会自动买卖；WORLD trade ... ui 始终强制打开窗口。");
-            foreach (WorldObject worldObject in Find.WorldObjects.AllWorldObjects.OrderBy(item => item.ID))
+            var objects = Find.WorldObjects.AllWorldObjects.Where(item => item != null && !item.Destroyed).ToList();
+            var settlements = objects.OfType<Settlement>().Where(item => item.Faction != Faction.OfPlayer && !item.HasMap).ToList();
+            result.AppendLine("WORLD_SUMMARY remote_settlements=" + settlements.Count + " trade_samples=8 other_settlements_omitted=1");
+            var tradeSamples = new HashSet<int>(settlements.Where(item => item.CanTradeNow).OrderBy(item => item.ID).Take(8).Select(item => item.ID));
+            foreach (WorldObject worldObject in objects.Where(item => !(item is Settlement) || !settlements.Contains((Settlement)item) || tradeSamples.Contains(item.ID)).OrderBy(item => item.ID))
             {
                 if (worldObject == null || worldObject.Destroyed) continue;
                 string faction = worldObject.Faction == null ? "-" : Clean(worldObject.Faction.Name);
                 string line = "WORLD_OBJECT id=" + worldObject.ID + " type=" + worldObject.GetType().Name + " tile=" + worldObject.Tile + " label=" + Clean(worldObject.Label) + " faction=" + faction;
                 Settlement settlement = worldObject as Settlement;
-                if (settlement != null) line += " canTrade=" + (settlement.CanTradeNow ? "1" : "0") + " trader=" + Clean(settlement.TraderName);
+                if (settlement != null) line += " canTrade=" + (settlement.CanTradeNow ? "1" : "0");
                 MapParent mapParent = worldObject as MapParent;
                 if (mapParent != null) line += " hasMap=" + (mapParent.HasMap ? "1" : "0");
                 Caravan caravan = worldObject as Caravan;
@@ -251,7 +254,7 @@ namespace AICoopCompanion
             Thing target = map.listerThings.AllThings.FirstOrDefault(item => item.thingIDNumber == targetId && item.Spawned);
             Pawn pawn = target as Pawn;
             AICoopGameComponent component = AICoopGameComponent.Current;
-            if (target == null || (pawn != null && (component == null || !component.IsAI(pawn))))
+            if (target == null || (pawn != null && (component == null || !component.CanAIControl(pawn))))
             {
                 Log("[拒绝] 装载目标不存在或不是 AI 殖民者：" + targetId);
                 return;
@@ -422,34 +425,6 @@ namespace AICoopCompanion
             }
         }
 
-        private static void HandleQuest(string[] parts, string line)
-        {
-            if (parts.Length != 5)
-            {
-                Log("[拒绝] WORLD quest 格式：WORLD quest 任务ID accept AI殖民者ID。");
-                return;
-            }
-            int questId, pawnId;
-            Quest quest = Int32.TryParse(parts[2], out questId) && Find.QuestManager != null
-                ? Find.QuestManager.QuestsListForReading.FirstOrDefault(item => item.id == questId) : null;
-            Pawn pawn = Int32.TryParse(parts[4], out pawnId) ? PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive_Colonists.FirstOrDefault(item => item.thingIDNumber == pawnId) : null;
-            if (quest == null || pawn == null || !IsAIPawn(pawn) || !parts[3].Equals("accept", StringComparison.OrdinalIgnoreCase) || quest.State != QuestState.NotYetAccepted)
-            {
-                Log("[拒绝] 任务不存在、已接受、操作类型无效或 AI 接受者无效：" + line);
-                return;
-            }
-            try
-            {
-                quest.Accept(pawn);
-                Log("[执行] AI 殖民者 " + pawn.LabelShort + " 已接受任务 " + quest.id + "：" + quest.name + "。");
-                Result("OK world_quest_accepted=" + quest.id);
-            }
-            catch (Exception ex)
-            {
-                Log("[拒绝] 接受任务失败：" + ex.Message);
-            }
-        }
-
         private static CaravanArrivalAction ArrivalActionFor(PlanetTile destination)
         {
             MapParent mapParent = Find.WorldObjects.MapParentAt(destination);
@@ -476,7 +451,7 @@ namespace AICoopCompanion
             {
                 int id;
                 Pawn pawn = Int32.TryParse(token, out id) ? map.mapPawns.FreeColonistsSpawned.FirstOrDefault(item => item.thingIDNumber == id) : null;
-                if (pawn != null && component != null && component.IsAI(pawn) && !pawn.Downed && !pawn.InMentalState && !pawns.Contains(pawn)) pawns.Add(pawn);
+                if (pawn != null && component != null && component.CanAIControl(pawn) && !pawn.Downed && !pawn.InMentalState && !pawns.Contains(pawn)) pawns.Add(pawn);
             }
             return pawns;
         }
@@ -527,12 +502,12 @@ namespace AICoopCompanion
         private static bool IsAICaravan(Caravan caravan)
         {
             AICoopGameComponent component = AICoopGameComponent.Current;
-            return component != null && caravan != null && caravan.IsPlayerControlled && caravan.PawnsListForReading.Any(component.IsAI) && !caravan.PawnsListForReading.Any(pawn => pawn.IsColonist && !component.IsAI(pawn));
+            return component != null && caravan != null && caravan.IsPlayerControlled && caravan.PawnsListForReading.Any(component.CanAIControl) && !caravan.PawnsListForReading.Any(pawn => pawn.IsColonist && !component.CanAIControl(pawn));
         }
 
         private static bool IsAIPawn(Pawn pawn)
         {
-            return pawn != null && AICoopGameComponent.Current != null && AICoopGameComponent.Current.IsAI(pawn);
+            return pawn != null && AICoopGameComponent.Current != null && AICoopGameComponent.Current.CanAIControl(pawn);
         }
 
         private static Map FindMap(string value)

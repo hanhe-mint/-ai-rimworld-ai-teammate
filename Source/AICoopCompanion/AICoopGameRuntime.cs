@@ -50,12 +50,12 @@ namespace AICoopCompanion
                 case "B":
                     return "在地图 " + Part(parts, 1) + " 的坐标（" + Part(parts, 3) + "，" + Part(parts, 4) + "）放置“" + DefLabel<ThingDef>(Part(parts, 2)) + "”建筑蓝图，朝向 " + Part(parts, 5, "0") + OptionalStuff(parts, 6) + "。";
                 case "F":
-                    return "在地图 " + Part(parts, 1) + " 为殖民地建立岩石外围墙，与房屋至少保持 " + Part(parts, 2) + " 格距离，并只保留左、右正中两个开口（不自动建门）" + OptionalStuff(parts, 3) + "。";
+                    return "环绕地图 " + Part(parts, 1) + " 上所有居住区建立单层矩形石墙，墙在居住区外，只留左右两个开口；不可建地形处绕行。";
                 case "F2":
-                    return "在地图 " + Part(parts, 1) + " 在普通外围墙外再间隔 4 格建立更大的石墙，只保留左侧正中一个开口，并自动放置安全大门" + OptionalStuff(parts, 3) + "。";
+                    return "兼容旧指令：环绕居住区建造单层围墙，不再追加第二层。";
                 case "G":
                     if (parts.Length == 6 && parts[5].Equals("fertile_adjacent", StringComparison.OrdinalIgnoreCase))
-                        return "在地图 " + Part(parts, 1) + " 从（" + Part(parts, 3) + "，" + Part(parts, 4) + "）开始，扩展到上下左右相连的全部最高肥力地块，建立“" + DefLabel<ThingDef>(Part(parts, 2)) + "”种植区。";
+                        return "在地图 " + Part(parts, 1) + " 从（" + Part(parts, 3) + "，" + Part(parts, 4) + "）开始，建立上下左右连续的最高肥力种植区，最多 15×全体殖民者人数格：“" + DefLabel<ThingDef>(Part(parts, 2)) + "”。";
                     return "在地图 " + Part(parts, 1) + " 的（" + Part(parts, 3) + "，" + Part(parts, 4) + "）至（" + Part(parts, 5) + "，" + Part(parts, 6) + "）建立“" + DefLabel<ThingDef>(Part(parts, 2)) + "”种植区。";
                 case "S":
                     return "在地图 " + Part(parts, 1) + " 的（" + Part(parts, 2) + "，" + Part(parts, 3) + "）至（" + Part(parts, 4) + "，" + Part(parts, 5) + "）建立" +
@@ -285,6 +285,11 @@ namespace AICoopCompanion
             if (activeGame != null && !object.ReferenceEquals(activeGame, Verse.Current.Game))
                 NotifyGameLoading();
             if (IsGameLoading) return;
+            if (!AICoopAgentBridge.IsConnected)
+            {
+                if (externalAgentThinking) CompleteExternalAgentThinking();
+                return;
+            }
             TryStartPendingWorkPause();
         }
 
@@ -563,7 +568,19 @@ namespace AICoopCompanion
                     }
                 }
 
-                foreach (Blueprint blueprint in map.listerThings.AllThings.OfType<Blueprint>())
+                var blueprints = map.listerThings.AllThings.OfType<Blueprint>().ToList();
+                state.AppendLine("BLUEPRINT_SUMMARY map=" + map.uniqueID + " " + string.Join(",", blueprints.GroupBy(bp => bp.EntityToBuild()?.defName ?? bp.def.defName).Select(group => group.Key + ":" + group.Count()).ToArray()));
+                var requiredMaterials = new Dictionary<ThingDef, int>();
+                foreach (Blueprint bp in blueprints)
+                    foreach (ThingDefCountClass cost in bp.TotalMaterialCost() ?? new List<ThingDefCountClass>())
+                    {
+                        if (cost?.thingDef == null) continue;
+                        int previous;
+                        requiredMaterials.TryGetValue(cost.thingDef, out previous);
+                        requiredMaterials[cost.thingDef] = previous + bp.ThingCountNeeded(cost.thingDef);
+                    }
+                state.AppendLine("BLUEPRINT_MATERIAL_TOTAL map=" + map.uniqueID + " " + string.Join(",", requiredMaterials.Select(pair => pair.Key.defName + ":need=" + pair.Value + ":available=" + EstimateMaterialAvailability(map, pair.Key)).ToArray()));
+                foreach (Blueprint blueprint in blueprints.Take(12))
                 {
                     BuildableDef entity = blueprint.EntityToBuild();
                     state.AppendLine("BP " + blueprint.thingIDNumber + "," + (entity == null ? blueprint.def.defName : entity.defName) +
@@ -677,9 +694,12 @@ namespace AICoopCompanion
 
         public static string BuildHarnessState(bool forceFullDynamicState)
         {
+            string perimeterNotices = "CONTROL_RULE player=" + (AICoopMod.Settings != null && AICoopMod.Settings.PlayerCanControlAI ? "all" : "owned") +
+                " ai=" + (AICoopMod.Settings != null && AICoopMod.Settings.AICanControlPlayer ? "all" : "owned") + "\n" +
+                (AICoopGameComponent.Current?.PerimeterNotices() ?? "");
             if (!forceFullDynamicState && object.ReferenceEquals(harnessSnapshotGame, Verse.Current.Game))
             {
-                return BuildHarnessEventState();
+                return perimeterNotices + "\n" + BuildHarnessEventState();
             }
 
             bool firstHarnessSnapshot = !object.ReferenceEquals(harnessSnapshotGame, Verse.Current.Game);
@@ -688,6 +708,7 @@ namespace AICoopCompanion
                 ? new HashSet<int>() : new HashSet<int>(harnessComponent.ReportedQuestIds);
             string prompt = BuildPrompt(forceFullDynamicState);
             StringBuilder state = new StringBuilder();
+            if (!perimeterNotices.NullOrEmpty()) state.AppendLine(perimeterNotices);
             state.AppendLine("HARNESS_STATE mode=initial; fixed_baseline_and_full_colony_state; later_rounds=notifications_critical_changes_and_command_feedback_only");
             foreach (string rawLine in (prompt ?? string.Empty).Replace("\r", string.Empty).Split('\n'))
             {
@@ -706,7 +727,10 @@ namespace AICoopCompanion
                     line.StartsWith("PRESET_CATALOG ", StringComparison.Ordinal) ||
                     line.StartsWith("TOOL_PERMISSIONS ", StringComparison.Ordinal) ||
                     line.StartsWith("TRADE_MODE ", StringComparison.Ordinal) ||
-                    line.StartsWith("RAID_POINTS ", StringComparison.Ordinal))
+                    line.StartsWith("RAID_POINTS ", StringComparison.Ordinal) ||
+                    line.StartsWith("WORLD_SUMMARY ", StringComparison.Ordinal) ||
+                    line.StartsWith("BLUEPRINT_SUMMARY ", StringComparison.Ordinal) ||
+                    line.StartsWith("BLUEPRINT_MATERIAL_TOTAL ", StringComparison.Ordinal))
                 {
                     state.AppendLine(line);
                 }
@@ -1019,7 +1043,7 @@ namespace AICoopCompanion
 
             StringBuilder result = new StringBuilder(fullState == null ? 256 : fullState.Length);
             foreach (string line in fixedLines) result.AppendLine(line);
-            AppendDynamicIndex(result, persistentDynamicLines);
+            if (!forceFullState && dynamicSnapshotInitialized) AppendDynamicIndex(result, persistentDynamicLines);
 
             List<KeyValuePair<int, string>> newQuestLines = new List<KeyValuePair<int, string>>();
             AICoopGameComponent questComponent = AICoopGameComponent.Current;
@@ -1034,7 +1058,7 @@ namespace AICoopCompanion
             if (forceFullState)
             {
                 result.AppendLine("DYNAMIC_STATE version=1 mode=full changed=" + (current.Count + newQuestLines.Count));
-                foreach (KeyValuePair<string, string> pair in current) result.AppendLine("DYNAMIC " + pair.Key + " " + pair.Value);
+                foreach (KeyValuePair<string, string> pair in current) result.AppendLine("DYNAMIC " + pair.Value);
                 foreach (KeyValuePair<int, string> quest in newQuestLines)
                     result.AppendLine("DYNAMIC WORLD_QUEST:" + quest.Key + " " + quest.Value);
                 return result.ToString().TrimEnd();
@@ -1042,7 +1066,7 @@ namespace AICoopCompanion
             if (!dynamicSnapshotInitialized)
             {
                 result.AppendLine("DYNAMIC_STATE version=1 mode=full changed=" + (current.Count + newQuestLines.Count));
-                foreach (KeyValuePair<string, string> pair in current) result.AppendLine("DYNAMIC " + pair.Key + " " + pair.Value);
+                foreach (KeyValuePair<string, string> pair in current) result.AppendLine("DYNAMIC " + pair.Value);
                 foreach (KeyValuePair<int, string> quest in newQuestLines)
                     result.AppendLine("DYNAMIC WORLD_QUEST:" + quest.Key + " " + quest.Value);
             }
@@ -1338,7 +1362,7 @@ namespace AICoopCompanion
                 (width < 13 || height < 13 ? "blocked_need_13x13" : (wallCount > 0 ? "in_progress" : "needed"));
             state.AppendLine("PERIMETER map=" + map.uniqueID + " status=" + status +
                 " colony_size=" + (hasBounds ? width + "x" + height : "-") +
-                " wall_or_door_count=" + wallCount + " margin=4+ openings=2 action=F " + map.uniqueID + " 4 action_outer=F2");
+                " wall_or_door_count=" + wallCount + " boundary=all_home_cells openings=2 layers=1 action=F " + map.uniqueID);
         }
 
         private static bool IsWallOrDoorForState(Thing thing)
@@ -1657,7 +1681,17 @@ namespace AICoopCompanion
             ExecuteInternal(response, false);
         }
 
+        internal static bool IsExecuting { get; private set; }
+
         private static void ExecuteInternal(string response, bool bypassPermission)
+        {
+            bool previous = IsExecuting;
+            IsExecuting = true;
+            try { ExecuteLines(response, bypassPermission); }
+            finally { IsExecuting = previous; }
+        }
+
+        private static void ExecuteLines(string response, bool bypassPermission)
         {
             if (response.NullOrEmpty()) return;
             AICoopGameComponent component = AICoopGameComponent.Current;
@@ -1732,7 +1766,7 @@ namespace AICoopCompanion
                     continue;
                 }
                 if (command != "M" && command != "D" && command != "A" &&
-                    command != "Q" && command != "B" && command != "F" && command != "F2" && command != "G" && command != "S" && command != "P" && command != "C" &&
+                    command != "MAP_SCAN" && command != "Q" && command != "B" && command != "F" && command != "F2" && command != "G" && command != "S" && command != "P" && command != "C" &&
                     command != "R" && command != "X" && command != "J" && command != "T" && command != "ORE" && command != "WORLD" && command != "PRESET" && command != "PRESET_DONE" && command != "PRESET_RETRY" && command != "NOTE_ADD" && command != "NOTE_READ" && command != "NOTE_DONE")
                 {
                     AICoopGameComponent.Current.AddLog("[拒绝] 无法识别的输出：" + line);
@@ -1758,6 +1792,12 @@ namespace AICoopCompanion
                     }
                 }
 
+                if (command == "MAP_SCAN")
+                {
+                    try { AICoopMapQuery.Execute(parts); }
+                    catch (Exception ex) { component.AddCommandResult("FAIL MAP_SCAN " + ex.Message); }
+                    continue;
+                }
                 if (command == "ORE")
                 {
                     try
@@ -1855,7 +1895,7 @@ namespace AICoopCompanion
                     AICoopGameComponent.Current.AddLog("[拒绝] 找不到殖民者：" + parts[1]);
                     continue;
                 }
-                if (!AICoopGameComponent.Current.IsAI(pawn))
+                if (!AICoopGameComponent.Current.CanAIControl(pawn))
                 {
                     AICoopGameComponent.Current.AddLog("[拒绝] 只能命令 AI 所属殖民者：" + parts[1]);
                     continue;
@@ -1892,6 +1932,7 @@ namespace AICoopCompanion
             if (command == "T" && parts.Length > 6) return "T." + parts[6].ToLowerInvariant();
             if ((command == "X" || command == "J") && parts.Length > 3) return command + "." + parts[3].ToLowerInvariant();
             if (command == "WORLD" && parts.Length > 1) return "WORLD." + parts[1].ToLowerInvariant();
+            if (command == "F2") return "F";
             if (command == "ORE") return "ORE";
             return command;
         }
@@ -2280,8 +2321,8 @@ namespace AICoopCompanion
         {
             minX = minZ = 0;
             int colonyMinX, colonyMinZ, colonyMaxX, colonyMaxZ;
-            if (!FindColonyBounds(map, out colonyMinX, out colonyMinZ, out colonyMaxX, out colonyMaxZ)) return false;
-            const int margin = 4;
+            if (!TryGetHomeBounds(map, out colonyMinX, out colonyMinZ, out colonyMaxX, out colonyMaxZ)) return false;
+            const int margin = 1;
             ThingDef wall = DefDatabase<ThingDef>.GetNamedSilentFail("Wall");
             ThingDef stuff = wall == null ? null : ChooseStoneStuff(wall, null, map);
             if (wall == null || stuff == null) return false;
@@ -2702,7 +2743,7 @@ namespace AICoopCompanion
         private static Pawn FindAIActor(Map map)
         {
             AICoopGameComponent component = AICoopGameComponent.Current;
-            return component == null || map == null ? null : map.mapPawns.FreeColonistsSpawned.FirstOrDefault(component.IsAI);
+            return component == null || map == null ? null : map.mapPawns.FreeColonistsSpawned.FirstOrDefault(component.CanAIControl);
         }
 
         private static void ExecuteBatchMove(Map map, string[] parts, string line)
@@ -2720,7 +2761,7 @@ namespace AICoopCompanion
                 return;
             }
             int count = 0;
-            foreach (Pawn pawn in map.mapPawns.FreeColonistsSpawned.Where(pawn => AICoopGameComponent.Current.IsAI(pawn) && !pawn.Downed))
+            foreach (Pawn pawn in map.mapPawns.FreeColonistsSpawned.Where(pawn => AICoopGameComponent.Current.CanAIControl(pawn) && !pawn.Downed))
             {
                 if (pawn.jobs.TryTakeOrderedJob(JobMaker.MakeJob(JobDefOf.Goto, new LocalTargetInfo(cell)))) count++;
             }
@@ -2785,7 +2826,7 @@ namespace AICoopCompanion
             }
             int count = 0;
             foreach (Pawn pawn in map.mapPawns.FreeColonistsSpawned.Where(candidate =>
-                AICoopGameComponent.Current.IsAI(candidate) && !candidate.Downed && !candidate.InMentalState &&
+                AICoopGameComponent.Current.CanAIControl(candidate) && !candidate.Downed && !candidate.InMentalState &&
                 candidate.drafter != null && candidate.TryGetAttackVerb(target, false) != null))
             {
                 AICoopKitingManager.MarkAIDraftIntent(pawn, true);
@@ -3257,7 +3298,7 @@ namespace AICoopCompanion
             if (firstBlueprint != null)
             {
                 Pawn builder = map.mapPawns.FreeColonistsSpawned.FirstOrDefault(candidate => AICoopGameComponent.Current != null &&
-                    AICoopGameComponent.Current.IsAI(candidate) && candidate.workSettings != null && !candidate.Downed);
+                    AICoopGameComponent.Current.CanAIControl(candidate) && candidate.workSettings != null && !candidate.Downed);
                 if (builder != null) StartMaterialDelivery(builder, firstBlueprint);
             }
             return placed;
@@ -3484,25 +3525,29 @@ namespace AICoopCompanion
 
         private static void ExecutePerimeter(Pawn pawn, string[] parts, string line, bool outerLayer)
         {
-            if (pawn == null || pawn.Map == null || (parts.Length != 3 && parts.Length != 4))
+            outerLayer = false; // F2 is retained only as an alias; never build a second layer.
+            if (pawn == null || pawn.Map == null || parts.Length < 2 || parts.Length > 4)
             {
-                AICoopGameComponent.Current.AddLog("[拒绝] F 格式：F mapID 4+ [岩石stuffDefName]。");
+                AICoopGameComponent.Current.AddLog("[拒绝] F 格式：F mapID [岩石stuffDefName]；旧间距参数兼容但不再使用。");
                 return;
             }
-            int margin;
-            if (!Int32.TryParse(parts[2], out margin) || margin < 4)
+            int margin = 1, legacyMargin;
+            string stuffName = parts.Length > 2 ? parts[2] : null;
+            bool legacy = parts.Length > 2 && Int32.TryParse(parts[2], out legacyMargin);
+            if (parts.Length == 4 && !legacy)
             {
-                AICoopGameComponent.Current.AddLog("[拒绝] 外围墙与房屋的间距至少为 4 格。");
+                AICoopGameComponent.Current.AddLog("[拒绝] F 格式：F mapID [岩石stuffDefName]。");
                 return;
             }
+            if (legacy) stuffName = parts.Length == 4 ? parts[3] : null;
             ThingDef wall = DefDatabase<ThingDef>.GetNamedSilentFail("Wall");
             if (wall == null)
             {
                 AICoopGameComponent.Current.AddLog("[拒绝] 当前版本没有可用的墙定义。");
                 return;
             }
-            ThingDef stuff = parts.Length == 4 ? DefDatabase<ThingDef>.GetNamedSilentFail(parts[3]) : null;
-            if (parts.Length == 4 && (stuff == null || !IsRockStuff(stuff) || stuff.stuffProps == null ||
+            ThingDef stuff = stuffName == null ? null : DefDatabase<ThingDef>.GetNamedSilentFail(stuffName);
+            if (stuffName != null && (stuff == null || !IsRockStuff(stuff) || stuff.stuffProps == null ||
                 !stuff.stuffProps.CanMake(wall)))
             {
                 AICoopGameComponent.Current.AddLog("[拒绝] 外围墙材料必须是能够建造墙的岩石材料。");
@@ -3516,9 +3561,10 @@ namespace AICoopCompanion
             }
 
             int minX, minZ, maxX, maxZ;
-            if (!FindColonyBounds(pawn.Map, out minX, out minZ, out maxX, out maxZ))
+            AICoopGameComponent.Current.ClearPerimeterHome();
+            if (!TryGetHomeBounds(pawn.Map, out minX, out minZ, out maxX, out maxZ))
             {
-                AICoopGameComponent.Current.AddLog("[拒绝] 找不到可围墙的殖民地建筑或蓝图。");
+                AICoopGameComponent.Current.AddLog("[拒绝] 地图没有居住区，请先设置居住区。");
                 return;
             }
             int colonyWidth = maxX - minX + 1;
@@ -3537,6 +3583,18 @@ namespace AICoopCompanion
             int layerMargin = outerLayer ? margin + 4 : margin;
             if (HasPerimeter(pawn.Map, minX, minZ, maxX, maxZ, layerMargin, outerLayer ? 1 : 2))
             {
+                var existingRing = new List<IntVec3>();
+                for (int x = minX - layerMargin; x <= maxX + layerMargin; x++)
+                {
+                    existingRing.Add(new IntVec3(x, 0, minZ - layerMargin));
+                    existingRing.Add(new IntVec3(x, 0, maxZ + layerMargin));
+                }
+                for (int z = minZ - layerMargin; z <= maxZ + layerMargin; z++)
+                {
+                    existingRing.Add(new IntVec3(minX - layerMargin, 0, z));
+                    existingRing.Add(new IntVec3(maxX + layerMargin, 0, z));
+                }
+                AICoopGameComponent.Current.RememberPerimeter(pawn.Map, existingRing);
                 AICoopGameComponent.Current.AddLog("[执行] 殖民地外围已有足够的围墙，跳过重复建设。");
                 return;
             }
@@ -3585,6 +3643,13 @@ namespace AICoopCompanion
                 foreach (IntVec3 cell in closing) AddUniqueCell(ring, cell);
             }
 
+            var plannedBoundary = new AICoopPerimeterRecord { mapId = pawn.Map.uniqueID, ring = ring };
+            var outsideBoundary = plannedBoundary.OutsideCells(pawn.Map);
+            if (pawn.Map.areaManager.Home.ActiveCells.Any(cell => outsideBoundary.Contains(cell) || ring.Contains(cell)))
+            {
+                AICoopGameComponent.Current.AddLog("[拒绝] 地形绕行后无法包围全部居住区，未放置新围墙，也未拆除旧墙。");
+                return;
+            }
             List<IntVec3> openingCells = FindPerimeterOpenings(ring, minX, minZ, maxX, maxZ, layerMargin, outerLayer ? 1 : 2);
             if (openingCells.Count != (outerLayer ? 1 : 2))
             {
@@ -3646,6 +3711,7 @@ namespace AICoopCompanion
                 blueprints.Add(blueprint);
             }
             bool deliveryStarted = blueprints.Count > 0 && StartMaterialDelivery(pawn, blueprints[0]);
+            AICoopGameComponent.Current.RememberPerimeter(pawn.Map, ring);
             AICoopGameComponent.Current.AddLog("[执行] 已生成 " + blueprints.Count + " 个" + (outerLayer ? "外层石墙/安全大门" : "岩石外围墙") +
                 "蓝图；" + (outerLayer ? "外层仅保留一个左侧正中安全大门，" : "保留左、右两个正中开口，") +
                 (deliveryStarted ? "已安排 AI 立即交付第一批材料。" : "材料将由施工优先级处理。"));
@@ -3740,6 +3806,19 @@ namespace AICoopCompanion
         internal static bool TryGetColonyBounds(Map map, out int minX, out int minZ, out int maxX, out int maxZ)
         {
             return FindColonyBounds(map, out minX, out minZ, out maxX, out maxZ);
+        }
+
+        internal static bool TryGetHomeBounds(Map map, out int minX, out int minZ, out int maxX, out int maxZ)
+        {
+            minX = minZ = int.MaxValue;
+            maxX = maxZ = int.MinValue;
+            if (map?.areaManager?.Home == null) return false;
+            foreach (IntVec3 cell in map.areaManager.Home.ActiveCells)
+            {
+                minX = Math.Min(minX, cell.x); maxX = Math.Max(maxX, cell.x);
+                minZ = Math.Min(minZ, cell.z); maxZ = Math.Max(maxZ, cell.z);
+            }
+            return minX != int.MaxValue;
         }
 
         private static int RemoveOverlappingRoomWalls(Map map, int minX, int minZ, int maxX, int maxZ)
@@ -3846,7 +3925,7 @@ namespace AICoopCompanion
 
         private static bool CanPlacePerimeterWall(Map map, IntVec3 cell, ThingDef wall, ThingDef stuff)
         {
-            return cell.InBounds(map) && (HasExistingWallOrDoor(map, cell) ||
+            return cell.InBounds(map) && !map.areaManager.Home[cell] && (HasExistingWallOrDoor(map, cell) ||
                 GenConstruct.CanPlaceBlueprintAt(wall, cell, Rot4.North, map, false, null, null, stuff).Accepted);
         }
 
@@ -4033,15 +4112,18 @@ namespace AICoopCompanion
             }
 
             HashSet<IntVec3> highest = new HashSet<IntVec3>(highestCells);
+            int cellLimit = 15 * PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive_FreeColonists.Count();
+            if (cellLimit == 0) return;
             Queue<IntVec3> pending = new Queue<IntVec3>();
             HashSet<IntVec3> selected = new HashSet<IntVec3>();
             pending.Enqueue(start);
             selected.Add(start);
-            while (pending.Count > 0)
+            while (pending.Count > 0 && selected.Count < cellLimit)
             {
                 IntVec3 current = pending.Dequeue();
                 foreach (IntVec3 next in CardinalNeighbors(current))
                 {
+                    if (selected.Count >= cellLimit) break;
                     if (highest.Contains(next) && selected.Add(next)) pending.Enqueue(next);
                 }
             }
@@ -4120,31 +4202,6 @@ namespace AICoopCompanion
             int width = zone.cells.Max(cell => cell.x) - zone.cells.Min(cell => cell.x) + 1;
             int height = zone.cells.Max(cell => cell.z) - zone.cells.Min(cell => cell.z) + 1;
             return width >= 7 && height >= 7;
-        }
-
-        internal static bool EnsureInitialDumpingStockpile(Map map)
-        {
-            if (map == null || map.zoneManager == null) return false;
-            Zone_Stockpile existing = map.zoneManager.AllZones.OfType<Zone_Stockpile>()
-                .FirstOrDefault(IsValidTemporaryDumpingStockpile);
-            if (existing != null) return true;
-
-            foreach (IntVec3 anchor in SiteAnchorsFromCenter(map, 7, 7, 0))
-            {
-                List<IntVec3> cells = new List<IntVec3>(49);
-                for (int x = anchor.x; x < anchor.x + 7; x++)
-                {
-                    for (int z = anchor.z; z < anchor.z + 7; z++) cells.Add(new IntVec3(x, 0, z));
-                }
-                if (cells.Any(cell => !cell.InBounds(map) || map.zoneManager.ZoneAt(cell) != null || !CanAddZoneCell(map, cell))) continue;
-                Zone_Stockpile zone = new Zone_Stockpile(StorageSettingsPreset.DumpingStockpile, map.zoneManager);
-                map.zoneManager.RegisterZone(zone);
-                foreach (IntVec3 cell in cells) zone.AddCell(cell);
-                zone.RenamableLabel = TemporaryDumpingStockpileLabel;
-                AICoopGameComponent.Current.AddLog("[执行] 开局已在地图中心向外搜索并建立 7x7 AI 临时垃圾储存区 " + zone.ID + "，用于搬运石块。");
-                return true;
-            }
-            return false;
         }
 
         internal static int PendingStoneChunkHaulCount(Map map)
@@ -4556,7 +4613,7 @@ namespace AICoopCompanion
             }
 
             List<Pawn> builders = map.mapPawns.FreeColonistsSpawned
-                .Where(candidate => component.IsAI(candidate) && !candidate.Downed && candidate.workSettings != null &&
+                .Where(candidate => component.CanAIControl(candidate) && !candidate.Downed && candidate.workSettings != null &&
                     !candidate.WorkTypeIsDisabled(WorkTypeDefOf.Construction) && MeetsConstructionRequirement(candidate, buildDef) &&
                     MeetsConstructionRequirement(candidate, secondBuildDef))
                 .OrderByDescending(ConstructionSkill)

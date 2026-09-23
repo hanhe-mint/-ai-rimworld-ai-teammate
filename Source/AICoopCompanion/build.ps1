@@ -1,4 +1,4 @@
-param([string]$GamePath)
+﻿param([string]$GamePath)
 $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 if (-not $GamePath) {

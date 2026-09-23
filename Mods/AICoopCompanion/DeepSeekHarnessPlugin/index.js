@@ -40,7 +40,7 @@ function pluginMessage(text) {
     id: randomUUID(),
     role: "user",
     content: Object.freeze([Object.freeze({ type: "text", text })]),
-    source: Object.freeze({ kind: "plugin", plugin: name }),
+    source: Object.freeze({ kind: name }),
   });
 }
 
@@ -278,7 +278,7 @@ export async function apply(ctx, config = {}) {
       "外接 Agent 不由本插件限制模型输出 token；输出内容不要求固定前缀或口吻。",
       "严格单步：每条 [RimWorld 自动协作事件] 或 [RimWorld 玩家输入事件] 可以连续调用一次或多次 mcp__rimworld__cli_execute；所有动作完成后只能输出一次最终回答。",
       "游戏状态、变化、错误和当前任务已经在事件文本中，不得调用 game_state、game_updates、observe、reference_index 或 reference_read；这些工具不会提供给你。",
-      "本轮必要操作完成后给出最终回答并结束回合，等待下一条游戏输入，不自行追加目标或读取状态。",
+      "本轮必要操作完成后以会话人设/队友口吻用一句话总结已做事项及下一步并结束回合（直接回答玩家问题不限一句）；信息不足时可在本轮调用 MAP_SCAN 局部查询，回复后不得自行读取状态或追加目标。",
     ].join("\n");
     const disposeSection = ctx.systemPrompt.section({
       name: PROTOCOL_SECTION,
@@ -369,14 +369,32 @@ export async function apply(ctx, config = {}) {
     let activeSession = null;
     let activeAgent = null;
     const handledConnectionMessages = new Set();
+    const gameChatMessageIds = new Set();
+    const continuedTokenTurns = new Set();
     let recordQueue = Promise.resolve();
     let manualRoundSerial = 0;
+    let continuationEpoch = 0;
     let nextContextAt = 0;
     let decisionIntervalMs = 30000;
     let pendingGameEvents = [];
 
-    const sendGameMessage = (agent, text) => {
-      if (!sendAgent(agent, pluginMessage(text))) return false;
+    const resetDecisionClock = () => {
+      nextContextAt = Date.now() + decisionIntervalMs;
+    };
+
+    const sendGameMessage = (agent, text, playerChat = false) => {
+      const message = playerChat
+        ? Object.freeze({ ...pluginMessage(text), source: Object.freeze({ kind: "user" }) })
+        : pluginMessage(text);
+      if (playerChat) {
+        gameChatMessageIds.add(message.id);
+        if (gameChatMessageIds.size > 128) gameChatMessageIds.delete(gameChatMessageIds.values().next().value);
+      }
+      if (!sendAgent(agent, message)) {
+        gameChatMessageIds.delete(message.id);
+        return false;
+      }
+      if (playerChat) resetDecisionClock();
       record("input", text);
       return true;
     };
@@ -437,7 +455,7 @@ export async function apply(ctx, config = {}) {
           return;
         }
         updateDecisionInterval(stateResponse);
-        nextContextAt = 0;
+        resetDecisionClock();
         const text = [
           "[RimWorld 玩家输入事件]",
           "玩家请求：",
@@ -461,6 +479,7 @@ export async function apply(ctx, config = {}) {
 
     const onSessionEvent = (session, event) => {
       if (disposed) return;
+      if (event?.type === "user/message" && gameChatMessageIds.has(event.data?.id)) return;
       const sessionId = sessionIdOf(session);
       if (event?.type === "compaction/summary" && bridgeControl.requested && activeAgent
         && sessionIdOf(activeAgent.session) === sessionId) bridgeControl.baselineRequired = true;
@@ -518,6 +537,11 @@ export async function apply(ctx, config = {}) {
       }
 
       if (!bridgeControl.requested || !activeAgent || sessionIdOf(activeAgent.session) !== sessionId) return;
+      if (event?.type === "turn/end" && event.data?.reason?.kind === "aborted") {
+        ++continuationEpoch;
+        return;
+      }
+      if (event?.type === "user/message" && command === null && commandText.trim()) resetDecisionClock();
       if (event?.type === "user/message" && command === null && commandText.trim()
         && bridgeControl.turn.phase === "awaiting_game_input") {
         bridgeControl.turn.number += 1;
@@ -528,7 +552,7 @@ export async function apply(ctx, config = {}) {
         return;
       }
       if (event?.type === "user/message" && command === null && commandText.trim()) {
-        record("error", "当前回合仍在执行或等待回复；玩家输入将在下一条游戏事件后处理。");
+        // Harness already admitted this message into the running turn.
         return;
       }
       if (event?.type === "assistant/message") {
@@ -536,11 +560,27 @@ export async function apply(ctx, config = {}) {
         const text = messageText(content)
           .replace(/<(think|analysis|reasoning)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi, "").trim();
         if (text) record("output", text);
+      } else if (event?.type === "turn/end" && event.data?.reason?.kind === "max-tokens") {
+        const key = `${sessionId}:${JSON.stringify(event.data?.turn ?? event.seq)}`;
+        if (continuedTokenTurns.has(key)) return;
+        continuedTokenTurns.add(key);
+        if (continuedTokenTurns.size > 128) continuedTokenTurns.delete(continuedTokenTurns.values().next().value);
+        const agent = activeAgent;
+        const serial = manualRoundSerial;
+        const epoch = continuationEpoch;
+        bridgeControl.turn.planSent = false;
+        bridgeControl.turn.phase = "awaiting_cli";
+        resetDecisionClock();
+        setTimeout(() => {
+          if (disposed || !bridgeControl.requested || !bridgeControl.connected ||
+            activeAgent !== agent || manualRoundSerial !== serial || continuationEpoch !== epoch) return;
+          if (!sendGameMessage(agent, "继续", true)) record("error", "输出达到上限，但续发消息失败；请手动发送“继续”。");
+        }, 0);
       } else if (event?.type === "turn/end" && event.data?.reason?.kind === "completed"
         && bridgeControl.turn.phase === "awaiting_cli" && !bridgeControl.turn.planSent) {
         bridgeControl.turn.planSent = true;
         bridgeControl.turn.phase = "awaiting_game_input";
-        nextContextAt = Date.now() + decisionIntervalMs;
+        resetDecisionClock();
         record("round_end", "本轮已完成。");
       } else if (event?.type === "tool/call") {
         const args = event.data?.arguments;
@@ -577,6 +617,7 @@ export async function apply(ctx, config = {}) {
         bridgeControl.connected = false;
         bridgeControl.lastNotice = "error";
         const detail = error instanceof Error ? error.message : String(error);
+        await mcp.request("plugin/disconnect", {}, 5000).catch(() => undefined);
         statusMessage(`无法连接 RimWorld：${detail}。请再次发送“连接游戏”重试。`, agent);
       } finally {
         if (connectionSerial === manualRoundSerial) bridgeControl.connecting = false;
@@ -592,8 +633,9 @@ export async function apply(ctx, config = {}) {
       try {
         const update = await mcp.request("plugin/poll", {
           flush: bridgeControl.turn.phase === "awaiting_game_input" && Date.now() >= nextContextAt,
-        }, 10000);
+        }, 65000);
         if (roundSerial !== manualRoundSerial || !bridgeControl.requested || activeAgent !== roundAgent) return;
+        if (update?.transient) return; // Retry polling only; never replay a game action.
         if (!update?.connected) {
           if (wasConnected && !bridgeControl.disconnectNoticeSent) {
             bridgeControl.disconnectNoticeSent = true;
@@ -648,12 +690,18 @@ export async function apply(ctx, config = {}) {
           }
           // Player input steers a running turn or starts an idle one immediately.
           // Do not fetch another state snapshot or wait for the decision timer.
-          if (sendGameMessage(activeAgent, playerText)) {
-            pendingGameEvents = pendingGameEvents.filter(event => !playerEvents.includes(event));
+          let sentPlayerMessage = false;
+          for (const event of playerEvents) {
+            const text = String(event.text).split(" details=").slice(1).join(" details=").replace(/^玩家说：/, "");
+            if (!sendGameMessage(activeAgent, text, true)) break;
+            pendingGameEvents = pendingGameEvents.filter(item => item !== event);
+            sentPlayerMessage = true;
+          }
+          if (sentPlayerMessage) {
             bridgeControl.turn.number += 1;
             bridgeControl.turn.planSent = false;
             bridgeControl.turn.phase = "awaiting_cli";
-            nextContextAt = 0;
+            resetDecisionClock();
           }
           return;
         }
@@ -696,6 +744,7 @@ export async function apply(ctx, config = {}) {
         if (roundSerial !== manualRoundSerial || activeAgent !== roundAgent) return;
         const detail = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
         record("error", `RimWorld Agent 桥接异常：${detail}`);
+        await mcp.request("plugin/disconnect", {}, 5000).catch(() => undefined);
         if (wasConnected && !bridgeControl.disconnectNoticeSent) {
           nextContextAt = 0;
           bridgeControl.disconnectNoticeSent = true;
@@ -719,7 +768,7 @@ export async function apply(ctx, config = {}) {
     if (ctx.commands && typeof ctx.commands.register === "function") {
       commandDisposers.push(ctx.commands.register({
         name: "rimworld-connect",
-        description: "Connect the current RimWorld save to this Harness agent.",
+        description: "连接游戏：让此会话与当前环世界存档协作。",
         handler: async ({ agent }) => {
           if (!sessionIdOf(agent?.session)) return { kind: "error", text: "无法识别发起连接的会话，未发送游戏上下文。" };
           if (bridgeControl.requested && activeAgent && sessionIdOf(activeAgent.session) !== sessionIdOf(agent.session))
@@ -729,7 +778,6 @@ export async function apply(ctx, config = {}) {
           activeAgent = agent;
           pendingGameEvents = [{ type: "manual_connect", text: "玩家在此会话连接游戏。" }];
           nextContextAt = 0;
-          record("error", "RimWorld 自动协作已停止。使用 /rimworld-connect 重新开始。\n");
           bridgeControl.turn.phase = "awaiting_game_input";
           bridgeControl.turn.planSent = false;
           bridgeControl.requested = true;
@@ -739,12 +787,12 @@ export async function apply(ctx, config = {}) {
           bridgeControl.lastNotice = "error";
           bridgeControl.baselineRequired = true;
           await connectNow(agent);
-          return { kind: "success", text: "RimWorld connection requested." };
+          return { kind: "success", text: "已请求连接环世界。" };
         },
       }));
       commandDisposers.push(ctx.commands.register({
         name: "rimworld-disconnect",
-        description: "Disconnect this Harness agent from RimWorld.",
+        description: "断开游戏：解除此会话与环世界的连接。",
         handler: async ({ agent }) => {
           if (activeAgent && sessionIdOf(activeAgent.session) !== sessionIdOf(agent?.session))
             return { kind: "error", text: "请在绑定游戏的会话中断开连接。" };
@@ -762,12 +810,12 @@ export async function apply(ctx, config = {}) {
           await mcp.request("plugin/disconnect", {}, 5000).catch(() => undefined);
           cancelAgent(agent);
           statusMessage("disconnect", agent);
-          return { kind: "success", text: "RimWorld disconnected." };
+          return { kind: "success", text: "已断开环世界连接。" };
         },
       }));
       commandDisposers.push(ctx.commands.register({
         name: "rimworld-stop",
-        description: "Stop automatic RimWorld Agent rounds and disconnect the current save.",
+        description: "停止协作：停止自动续轮并断开当前存档。",
         handler: async ({ agent }) => {
           if (activeAgent && sessionIdOf(activeAgent.session) !== sessionIdOf(agent?.session))
             return { kind: "error", text: "请在绑定游戏的会话中停止协作。" };
@@ -785,7 +833,7 @@ export async function apply(ctx, config = {}) {
           await mcp.request("plugin/disconnect", {}, 5000).catch(() => undefined);
           cancelAgent(agent);
           statusMessage("RimWorld 自动协作已停止。使用 /rimworld-connect 重新开始。", agent, false);
-          return { kind: "success", text: "RimWorld Agent rounds stopped." };
+          return { kind: "success", text: "已停止环世界自动协作。" };
         },
       }));
     }

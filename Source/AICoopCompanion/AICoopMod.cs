@@ -60,8 +60,19 @@ namespace AICoopCompanion
             listing.Label("支持本机 Windows 上运行的 DeepSeek Harness（含启动器 Web 界面）；在 Harness 加载环世界插件后手动连接。仅打开远程网页不能访问本机游戏。");
             listing.Label("命名管道：" + AICoopAgentBridge.PipePath);
             listing.Label("连接状态：" + AICoopAgentBridge.StatusLabel);
-            listing.CheckboxLabeled("允许双方控制全部殖民者", ref Settings.allowSharedControl);
+            string[] controlLabels = { "各自控制自己的殖民者", "双方可控制全部殖民者", "玩家可控制AI，AI不可控制玩家" };
+            if (listing.ButtonText("双方操控方式：" + controlLabels[Settings.ControlMode]))
+            {
+                var options = new List<FloatMenuOption>();
+                for (int i = 0; i < controlLabels.Length; i++)
+                {
+                    int mode = i;
+                    options.Add(new FloatMenuOption(controlLabels[i], () => Settings.ControlMode = mode));
+                }
+                Find.WindowStack.Add(new FloatMenu(options));
+            }
             listing.CheckboxLabeled("AI 思考时暂停游戏（外接 Agent）", ref Settings.pauseDuringWorkAI);
+            listing.CheckboxLabeled("聊天时暂停游戏（打开聊天页面时）", ref Settings.pauseWhileChatOpen);
             if (Settings.pauseDuringWorkAI)
             {
                 listing.Label("两次 AI 暂停之间最短工作时间：" + Settings.minWorkSecondsBetweenPauses + " 秒");
@@ -159,7 +170,16 @@ namespace AICoopCompanion
     {
         public AICoopTradeMode tradeMode = AICoopTradeMode.PlayerWindow;
         public bool allowSharedControl;
+        private int controlMode = -1;
+        public int ControlMode
+        {
+            get { return controlMode < 0 ? (allowSharedControl ? 1 : 0) : controlMode; }
+            set { controlMode = Math.Max(0, Math.Min(2, value)); allowSharedControl = controlMode == 1; }
+        }
+        public bool PlayerCanControlAI { get { return ControlMode != 0; } }
+        public bool AICanControlPlayer { get { return ControlMode == 1; } }
         public bool pauseDuringWorkAI;
+        public bool pauseWhileChatOpen;
         public int minWorkSecondsBetweenPauses = 10;
         public bool showDetailedCommands;
         public int decisionIntervalSeconds = 30;
@@ -181,8 +201,7 @@ namespace AICoopCompanion
             }
             if (key.StartsWith("WORLD.", StringComparison.OrdinalIgnoreCase))
             {
-                if (key.Equals("WORLD.trade", StringComparison.OrdinalIgnoreCase) ||
-                    key.Equals("WORLD.quest", StringComparison.OrdinalIgnoreCase)) return AICoopPermissionMode.Deny;
+                if (key.Equals("WORLD.trade", StringComparison.OrdinalIgnoreCase)) return AICoopPermissionMode.Deny;
                 return AICoopPermissionMode.Ask;
             }
             return AICoopPermissionMode.Allow;
@@ -204,7 +223,10 @@ namespace AICoopCompanion
         {
             Scribe_Values.Look(ref tradeMode, "tradeMode", AICoopTradeMode.PlayerWindow);
             Scribe_Values.Look(ref allowSharedControl, "allowSharedControl", false);
+            Scribe_Values.Look(ref controlMode, "controlMode", -1);
+            if (Scribe.mode == LoadSaveMode.PostLoadInit) ControlMode = ControlMode;
             Scribe_Values.Look(ref pauseDuringWorkAI, "pauseDuringWorkAI", false);
+            Scribe_Values.Look(ref pauseWhileChatOpen, "pauseWhileChatOpen", false);
             Scribe_Values.Look(ref minWorkSecondsBetweenPauses, "minWorkSecondsBetweenPauses", 10);
             Scribe_Values.Look(ref showDetailedCommands, "showDetailedCommands", false);
             Scribe_Values.Look(ref decisionIntervalSeconds, "decisionIntervalSeconds", 30);
@@ -222,6 +244,7 @@ namespace AICoopCompanion
     {
         static AICoopBootstrap()
         {
+            AICoopAgentBridge.InstallExitHooks();
             if (Prefs.DevMode)
             {
                 DebugSettings.godMode = true;

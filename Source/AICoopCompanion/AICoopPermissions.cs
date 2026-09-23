@@ -26,6 +26,7 @@ namespace AICoopCompanion
     {
         public static readonly AICoopToolPermissionDefinition[] Definitions =
         {
+            new AICoopToolPermissionDefinition("MAP_SCAN", "查看地图范围信息"),
             new AICoopToolPermissionDefinition("M", "移动"),
             new AICoopToolPermissionDefinition("D", "征召/解除征召"),
             new AICoopToolPermissionDefinition("A", "攻击"),
@@ -85,7 +86,6 @@ namespace AICoopCompanion
             new AICoopToolPermissionDefinition("WORLD.load", "运输舱/穿梭机装载"),
             new AICoopToolPermissionDefinition("WORLD.launch", "运输舱/穿梭机发射"),
             new AICoopToolPermissionDefinition("WORLD.trade", "世界地图贸易"),
-            new AICoopToolPermissionDefinition("WORLD.quest", "接取任务"),
             new AICoopToolPermissionDefinition("T.cancel", "取消指定"),
             new AICoopToolPermissionDefinition("T.deconstruct", "拆除指定"),
             new AICoopToolPermissionDefinition("T.mine", "采矿指定"),
@@ -107,7 +107,7 @@ namespace AICoopCompanion
             new AICoopToolPermissionDefinition("T.remove_floor_paint", "移除地板涂料"),
             new AICoopToolPermissionDefinition("T.remove_plan", "移除计划"),
             new AICoopToolPermissionDefinition("T.strip", "剥取衣物"),
-            new AICoopToolPermissionDefinition("F", "外围岩石墙"),
+            new AICoopToolPermissionDefinition("F", "环绕居住区建造围墙"),
             new AICoopToolPermissionDefinition("X.chop", "单目标伐木"),
             new AICoopToolPermissionDefinition("X.cut", "单目标割除非树植物"),
             new AICoopToolPermissionDefinition("X.harvest", "单目标收获"),

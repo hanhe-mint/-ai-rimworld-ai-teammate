@@ -56,6 +56,71 @@ namespace AICoopCompanion
         private int lastAgentRecordTick;
         private int lastSavedGameTick;
         private bool loadedFromSave;
+        private bool initialConfigurationRequested;
+        private List<AICoopPerimeterRecord> perimeterRecords = new List<AICoopPerimeterRecord>();
+
+        public void RememberPerimeter(Map map, List<IntVec3> ring)
+        {
+            var next = new AICoopPerimeterRecord { mapId = map.uniqueID, ring = new List<IntVec3>(ring) };
+            var oldCells = perimeterRecords.Where(record => record.mapId == map.uniqueID && record.ring != null)
+                .SelectMany(record => record.ring).Distinct().Except(ring).ToList();
+            int removed = 0;
+            if (oldCells.Count > 0)
+            {
+                var outside = next.OutsideCells(map);
+                foreach (IntVec3 cell in oldCells)
+                {
+                    if (!cell.InBounds(map) || outside.Contains(cell)) continue;
+                    // An old boundary incorporated into a roofed room is no longer an outer wall.
+                    if (GenAdj.CardinalDirections.Any(dir => (cell + dir).InBounds(map) && (cell + dir).Roofed(map))) continue;
+                    foreach (Thing thing in cell.GetThingList(map).ToList())
+                    {
+                        ThingDef def = thing is Blueprint ? ((Blueprint)thing).EntityToBuild() as ThingDef :
+                            thing is Frame ? thing.def.entityDefToBuild as ThingDef : thing.def;
+                        if (thing.Faction != Faction.OfPlayer || def == null ||
+                            (def.defName != "Wall" && (def.thingClass == null || !typeof(Building_Door).IsAssignableFrom(def.thingClass)))) continue;
+                        if (thing is Blueprint) { thing.Destroy(DestroyMode.Cancel); removed++; }
+                        else if (map.designationManager.DesignationOn(thing, DesignationDefOf.Deconstruct) == null)
+                        {
+                            map.designationManager.AddDesignation(new Designation(thing, DesignationDefOf.Deconstruct));
+                            removed++;
+                        }
+                    }
+                }
+            }
+            perimeterRecords.RemoveAll(record => record.mapId == map.uniqueID);
+            perimeterRecords.Add(next);
+            ClearPerimeterHome();
+            if (removed > 0) AddLog("[执行] 新围墙内的 " + removed + " 处旧外围墙已标记拆除或取消蓝图；保留重合墙段及房间墙。");
+        }
+
+        public string PerimeterNotices()
+        {
+            ClearPerimeterHome();
+            return string.Join("\n", perimeterRecords.Select(record => record.Check()).Where(text => !text.NullOrEmpty()).ToArray());
+        }
+
+        public bool IsPerimeterCell(Map map, IntVec3 cell)
+        {
+            return map != null && perimeterRecords.Any(record => record.mapId == map.uniqueID && record.ring != null && record.ring.Contains(cell));
+        }
+
+        public void ClearPerimeterHome()
+        {
+            foreach (var record in perimeterRecords)
+            {
+                Map map = Find.Maps.FirstOrDefault(item => item.uniqueID == record.mapId);
+                if (map?.areaManager?.Home == null || record.ring == null) continue;
+                foreach (IntVec3 cell in record.ring) if (cell.InBounds(map)) map.areaManager.Home[cell] = false;
+            }
+        }
+
+        public void RequestInitialConfiguration()
+        {
+            if (initialConfigurationRequested) return;
+            initialConfigurationRequested = true;
+            AddPlayerRequest("开始协作前，请根据殖民者的技能与需求配置工作优先级、工作/睡眠/娱乐时间，以及服装、食物和药物等方案。配置完成后可在聊天中告诉 AI；之后需要调整时再与 AI 协商。");
+        }
 
         public AICoopGameComponent(Game game)
         {
@@ -123,12 +188,13 @@ namespace AICoopCompanion
         {
             AICoopAgentRuntime.Update();
             if (AICoopAgentRuntime.IsGameLoading) return;
+            if (!AICoopAgentBridge.IsConnected) return;
             AICoopKitingManager.Tick();
             ProcessPendingNonForcedApparel();
             if (Find.TickManager.TicksGame % 60 == 0)
             {
                 EnsureOwnership();
-                EnsureInitialDumpingStockpiles();
+                ClearPerimeterHome();
             }
 
             int currentTick = Find.TickManager.TicksGame;
@@ -163,6 +229,9 @@ namespace AICoopCompanion
 
         public override void ExposeData()
         {
+            Scribe_Values.Look(ref initialConfigurationRequested, "initialConfigurationRequested", false);
+            Scribe_Collections.Look(ref perimeterRecords, "perimeterRecords", LookMode.Deep);
+            if (perimeterRecords == null) perimeterRecords = new List<AICoopPerimeterRecord>();
             if (Scribe.mode == LoadSaveMode.LoadingVars)
             {
                 AICoopAgentBridge.NotifyGameLoading();
@@ -279,6 +348,12 @@ namespace AICoopCompanion
             return GetOwner(pawn) == AICoopOwner.AI;
         }
 
+        public bool CanAIControl(Pawn pawn)
+        {
+            return pawn != null && (IsAI(pawn) || (pawn.IsColonist && pawn.Faction == Faction.OfPlayer &&
+                AICoopMod.Settings != null && AICoopMod.Settings.AICanControlPlayer));
+        }
+
         public void AssignNewRecruit(Pawn pawn, AICoopOwner owner)
         {
             if (pawn == null) return;
@@ -289,6 +364,7 @@ namespace AICoopCompanion
 
         public void CheckBedCapacityForPawn(Pawn pawn, string reason)
         {
+            if (!AICoopAgentBridge.IsConnected) return;
             if (pawn == null) return;
             if (pawn.Map != null)
             {
@@ -679,6 +755,7 @@ namespace AICoopCompanion
 
         public void RecordPrisonerCapture(Pawn prisoner, Pawn captor)
         {
+            if (!AICoopAgentBridge.IsConnected) return;
             if (prisoner == null || captor == null || !IsAI(captor)) return;
             if (aiCapturedPrisoners.Contains(prisoner.thingIDNumber)) return;
             aiCapturedPrisoners.Add(prisoner.thingIDNumber);
@@ -953,13 +1030,5 @@ namespace AICoopCompanion
             if (ownershipChanged && Find.ColonistBar != null) Find.ColonistBar.MarkColonistsDirty();
         }
 
-        private void EnsureInitialDumpingStockpiles()
-        {
-            foreach (Map map in Find.Maps)
-            {
-                if (map == null || map.mapPawns == null || !map.mapPawns.FreeColonistsSpawned.Any(IsAI)) continue;
-                AICoopActionExecutor.EnsureInitialDumpingStockpile(map);
-            }
-        }
     }
 }

@@ -45,6 +45,8 @@ namespace AICoopCompanion
         private static int generation;
         private static bool running;
         private static bool connected;
+        private static volatile bool shuttingDown;
+        private static DateTime lastAgentHeartbeatUtc;
         private static string sessionId = "-";
         private static string lastError = string.Empty;
         private static long nextEventSequence;
@@ -67,7 +69,7 @@ namespace AICoopCompanion
 
         public static bool IsConnected
         {
-            get { lock (Gate) return connected; }
+            get { lock (Gate) return connected && DateTime.UtcNow - lastAgentHeartbeatUtc < TimeSpan.FromSeconds(90); }
         }
 
         public static string StatusLabel
@@ -77,7 +79,7 @@ namespace AICoopCompanion
                 lock (Gate)
                 {
                     if (!running) return lastError.NullOrEmpty() ? "未启动" : "启动失败：" + lastError;
-                    return connected ? "Agent 已连接" : "等待 Agent 连接";
+                    return IsConnected ? "Agent 已连接" : "等待 Agent 连接";
                 }
             }
         }
@@ -86,6 +88,18 @@ namespace AICoopCompanion
         {
             Stop();
             lock (Gate) PendingStartupEvents.Clear();
+        }
+
+        public static void InstallExitHooks()
+        {
+            UnityEngine.Application.wantsToQuit += delegate { Shutdown(); return true; };
+            UnityEngine.Application.quitting += Shutdown;
+        }
+
+        public static void Shutdown()
+        {
+            shuttingDown = true;
+            Stop();
         }
 
         public static void NotifyGameReady()
@@ -119,7 +133,7 @@ namespace AICoopCompanion
         public static void PumpMainThread()
         {
             AICoopSettings settings = AICoopMod.Settings;
-            bool shouldRun = settings != null &&
+            bool shouldRun = !shuttingDown && settings != null &&
                 Current.Game != null && !AICoopAgentRuntime.IsGameLoading;
             if (shouldRun) EnsureStarted();
             else
@@ -166,7 +180,7 @@ namespace AICoopCompanion
             int currentGeneration;
             lock (Gate)
             {
-                if (running) return;
+                if (running || shuttingDown) return;
                 generation++;
                 currentGeneration = generation;
                 running = true;
@@ -226,11 +240,7 @@ namespace AICoopCompanion
                 request.Response = ErrorResponse(request.Id, "game_loading", "游戏正在载入或已退出存档。请重新连接。");
                 request.Done.Set();
             }
-            if (pipe != null)
-            {
-                try { pipe.Dispose(); }
-                catch { }
-            }
+            AICoopPipeLifetime.CloseWithoutWaiting(pipe);
         }
 
         private static void ServerLoop(int serverGeneration)
@@ -243,7 +253,7 @@ namespace AICoopCompanion
                     try
                     {
                         pipe = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1,
-                            PipeTransmissionMode.Byte, PipeOptions.None);
+                            PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
                         lock (Gate)
                         {
                             if (!running || generation != serverGeneration)
@@ -254,11 +264,19 @@ namespace AICoopCompanion
                             activePipe = pipe;
                         }
 
-                        pipe.WaitForConnection();
+                        IAsyncResult connection = pipe.BeginWaitForConnection(null, null);
+                        if (!connection.IsCompleted)
+                        {
+                            WaitHandle signal = connection.AsyncWaitHandle;
+                            while (!signal.WaitOne(100))
+                                if (!IsGenerationActive(serverGeneration)) return;
+                            pipe.EndWaitForConnection(connection);
+                            signal.Close();
+                        }
+                        else pipe.EndWaitForConnection(connection);
                         lock (Gate)
                         {
                             if (generation != serverGeneration) return;
-                            connected = true;
                             lastError = string.Empty;
                         }
 
@@ -294,7 +312,7 @@ namespace AICoopCompanion
                         lock (Gate)
                         {
                             if (object.ReferenceEquals(activePipe, pipe)) activePipe = null;
-                            if (generation == serverGeneration) connected = false;
+                            // Each CLI request closes its transport; that is not an Agent disconnect.
                         }
                         if (pipe != null)
                         {
@@ -338,11 +356,16 @@ namespace AICoopCompanion
                 PendingRequests.Enqueue(request);
             }
 
-            if (!request.Done.WaitOne(30000))
+            DateTime deadline = DateTime.UtcNow.AddSeconds(30);
+            while (!request.Done.WaitOne(100))
             {
-                if (Interlocked.CompareExchange(ref request.State, 2, 0) == 0)
+                if (!IsGenerationActive(serverGeneration))
+                {
+                    Interlocked.CompareExchange(ref request.State, 2, 0);
+                    return ErrorResponse(id, "session_expired", "游戏已退出或正在载入，请求已终止。");
+                }
+                if (DateTime.UtcNow >= deadline && Interlocked.CompareExchange(ref request.State, 2, 0) == 0)
                     return ErrorResponse(id, "main_thread_timeout", "30 秒内未获得游戏主线程响应，请确认游戏没有卡死或停在载入界面。");
-                request.Done.WaitOne();
             }
             return request.Response ?? ErrorResponse(id, "empty_response", "游戏没有返回结果。");
         }
@@ -351,6 +374,25 @@ namespace AICoopCompanion
         {
             if (request.Generation != generation || AICoopAgentRuntime.IsGameLoading)
                 return ErrorResponse(request.Id, "session_expired", "游戏会话已变化，请重新连接。");
+
+            if (request.Method == "agent_connect")
+            {
+                if (AICoopGameComponent.Current == null || Find.TickManager == null)
+                    return ErrorResponse(request.Id, "no_game", "请先进入游戏存档再连接。");
+                lock (Gate) { connected = true; lastAgentHeartbeatUtc = DateTime.UtcNow; }
+                AICoopGameComponent.Current?.RequestInitialConfiguration();
+                return SuccessResponse(request.Id, "{\"session\":" + Json(CurrentSessionId()) + "}");
+            }
+            if (request.Method == "agent_disconnect")
+            {
+                lock (Gate) connected = false;
+                AICoopAgentRuntime.CompleteExternalAgentThinking();
+                return SuccessResponse(request.Id, "{\"disconnected\":true}");
+            }
+            if (request.Method == "results" || request.Method == "agent_state" || request.Method == "execute" || request.Method == "agent_record")
+            {
+                lock (Gate) { if (connected) lastAgentHeartbeatUtc = DateTime.UtcNow; }
+            }
 
             if (request.Method == "ping")
             {

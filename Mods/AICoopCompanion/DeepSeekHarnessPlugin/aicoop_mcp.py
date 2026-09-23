@@ -14,7 +14,7 @@ from aicoop_tools import CATALOG_VERSION, TOOLS, build_command, public_tool, val
 
 
 SERVER_NAME = "rimworld-ai-coop"
-SERVER_VERSION = "1.4.0"
+SERVER_VERSION = "0.3.5"
 DEFAULT_PROTOCOL_VERSION = "2025-06-18"
 PLUGIN_DIR = Path(__file__).resolve().parent
 MOD_ROOT = PLUGIN_DIR.parent
@@ -30,6 +30,7 @@ bridge_session: str | None = None
 current_task_reference: str | None = None
 state_initialized = False
 manual_connection = False
+consecutive_poll_failures = 0
 pending_agent_feedback: list[dict[str, Any]] = []
 
 
@@ -94,6 +95,10 @@ def adopt_session(response: dict[str, Any]) -> bool:
     if session is None or session == bridge_session:
         return False
     changed = bridge_session is not None
+    if changed and manual_connection:
+        reconnect = bridge_call("agent_connect")
+        if not reconnect.get("ok"):
+            raise ConnectionError("载入后的游戏暂时未就绪。")
     bridge_session = session
     model_event_cursor = 0
     agent_event_cursor = 0
@@ -337,12 +342,16 @@ def read_updates(arguments: dict[str, Any]) -> dict[str, Any]:
 
 
 def poll_agent_triggers(flush_feedback: bool = False) -> dict[str, Any]:
-    global agent_event_cursor, manual_connection, pending_agent_feedback
+    global agent_event_cursor, manual_connection, pending_agent_feedback, consecutive_poll_failures
     try:
         response = bridge_call("results", after=agent_event_cursor)
         if not response.get("ok"):
+            consecutive_poll_failures += 1
+            if consecutive_poll_failures < 3:
+                return {"connected": True, "transient": True, "events": []}
             manual_connection = False
             return {"connected": False, "response": response}
+        consecutive_poll_failures = 0
         changed = adopt_session(response)
         if changed:
             response = bridge_call("results", after=0)
@@ -376,6 +385,9 @@ def poll_agent_triggers(flush_feedback: bool = False) -> dict[str, Any]:
             "decisionIntervalSeconds": result.get("decisionIntervalSeconds"),
         }
     except (OSError, ConnectionError, RuntimeError) as error:
+        consecutive_poll_failures += 1
+        if consecutive_poll_failures < 3:
+            return {"connected": True, "transient": True, "events": [], "error": str(error)}
         manual_connection = False
         return {"connected": False, "error": str(error)}
 
@@ -390,6 +402,8 @@ def forward_agent_feedback(event: dict[str, Any]) -> bool:
         return False
     if event_type == "command_result" and "request_player=1" in text:
         return False
+    if event_type == "command_result" and " MAP_SCAN map=" in text:
+        return False  # Already delivered as the read-only CLI result, not a new event.
     if event_type == "log":
         if text.startswith("[Agent ") or (text.startswith("[") and "Agent]" in text[:40]):
             return False
@@ -404,8 +418,9 @@ def forward_agent_feedback(event: dict[str, Any]) -> bool:
 
 def connect_game() -> dict[str, Any]:
     """Perform the first named-pipe request only after an explicit user command."""
-    global manual_connection
-    response = bridge_call("ping")
+    global manual_connection, consecutive_poll_failures
+    consecutive_poll_failures = 0
+    response = bridge_call("agent_connect")
     if response.get("ok"):
         manual_connection = True
         adopt_session(response)
@@ -416,6 +431,10 @@ def connect_game() -> dict[str, Any]:
 
 def disconnect_game() -> dict[str, Any]:
     global manual_connection, model_event_cursor, agent_event_cursor, bridge_session, state_initialized, pending_agent_feedback
+    try:
+        bridge_call("agent_disconnect")
+    except (OSError, ConnectionError, RuntimeError):
+        pass
     manual_connection = False
     model_event_cursor = 0
     agent_event_cursor = 0

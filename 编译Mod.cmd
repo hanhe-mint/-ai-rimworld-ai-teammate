@@ -1,5 +1,5 @@
 @echo off
 chcp 65001 >nul
-echo 请在提示后输入包含 RimWorldWin64.exe 的游戏目录。
-powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0Source\AICoopCompanion\build.ps1"
+"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0Source\AICoopCompanion\build.ps1"
+if errorlevel 1 echo Build failed. See the message above.
 pause

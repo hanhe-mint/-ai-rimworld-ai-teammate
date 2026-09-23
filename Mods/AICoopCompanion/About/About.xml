@@ -17,7 +17,9 @@
   <loadAfter>
     <li>brrainz.harmony</li>
   </loadAfter>
-  <description>接入deepseek harness，让deepseek加入你的殖民地，和你一起在环世界生存。
+  <description>版本：0.3.5
+
+接入deepseek harness，让deepseek加入你的殖民地，和你一起在环世界生存。
 
 你和 AI 分别管理自己的殖民者，也可以开启共享控制。AI 直接读取游戏数据，安排种植、采集、建造、生产、研究和战斗。你可以在游戏或harness内和它聊天、提出需求，或回应它的求助。
 

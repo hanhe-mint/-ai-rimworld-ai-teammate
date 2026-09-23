@@ -1,0 +1,34 @@
+环世界AI队友 0.3.5 源码版
+作者：寒荷mint
+
+目录
+Source/AICoopCompanion：完整 C# 源码与 build.ps1。
+Mods/AICoopCompanion：Mod 资源、已编译 DLL、攻略与预设。
+Mods/AICoopCompanion/DeepSeekHarnessPlugin：可编辑的 JS、Python 插件/CLI 源码。
+packages：C# 编译器、.NET 参考程序集和 Harmony 编译依赖，保留其许可证。
+使用说明：提供给发布者的说明与更新日志。插件自身开发说明仍保留在插件目录。
+
+编译
+1. 完整解压，准备 Windows 与 RimWorld 1.6 游戏。
+2. 双击根目录“编译Mod.cmd”。
+3. 输入包含 RimWorldWin64.exe 的游戏目录，不能填 Mods 或存档目录。
+4. 成功后输出为 Mods/AICoopCompanion/Assemblies/AICoopCompanion.dll。
+5. 游戏的 Assembly-CSharp.dll、Unity DLL 不随源码分发，编译时从你的游戏读取。
+6. 运行本 Mod 需要单独启用 Harmony。源码 packages 内的 Harmony 只用于编译。
+7. 修改 JS/Python 后重启 DSH；修改 C# 后重新编译并重启游戏。
+
+上传已有 GitHub 仓库（不要把源码压缩包当成源代码上传）
+仓库：https://github.com/hanhe-mint/-ai-rimworld-ai-teammate
+1. 安装 GitHub Desktop，登录拥有仓库权限的账号。
+2. File > Clone repository > URL，粘贴上方地址，选择一个新的本地目录后 Clone。
+3. 把本源码版内的 Source、Mods、packages、编译Mod.cmd、使用说明等复制进克隆目录，保持目录层级；不要复制另一份 .git。
+4. 对已有文件覆盖前先检查原仓库是否有尚未合并的修改，不要随意删除其他文件。
+5. GitHub Desktop 的 Changes 中逐个检查文件，确保没有 API Key、install-state.json、DSH 数据、存档、缓存和自己的本机路径配置。
+6. Summary 填写“发布 0.3.5”，点击 Commit to main，再点击 Push origin。源码按独立文件上传，不要只上传 ZIP。
+7. 浏览器打开仓库 > Releases > Draft a new release，创建标签 v0.3.5，标题“环世界AI队友 0.3.5”。
+8. 将本目录更新日志复制为发布说明，拖入玩家版 rimworld-ai-teammate-0.3.5.zip，可选附上源码 ZIP 和 SHA256 校验文件。
+9. 检查无私人数据后点击 Publish release。这些步骤需你操作，本次没有自动上传。
+
+依赖与许可
+不要给上游依赖更改许可证，不要把 RimWorld 游戏本体或 DSH 用户数据上传。
+本项目自身的开源许可证由作者决定；未选择许可证不代表他人可以无限制再分发。

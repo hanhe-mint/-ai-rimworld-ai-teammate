@@ -9,13 +9,46 @@ using Verse.AI;
 
 namespace AICoopCompanion
 {
+    [HarmonyPatch(typeof(GenScene), "GoToMainMenu")]
+    internal static class AICoopLeaveGamePatch
+    {
+        public static void Prefix()
+        {
+            AICoopAgentRuntime.NotifyGameLoading();
+            AICoopAgentBridge.NotifyGameLoading();
+        }
+    }
+
+    [HarmonyPatch(typeof(AutoHomeAreaMaker), "Notify_BuildingSpawned")]
+    internal static class AICoopPerimeterAutoHomePatch
+    {
+        public static bool Prefix(Thing __0)
+        {
+            return !AICoopAgentBridge.IsConnected || __0 == null || __0.def.defName != "Wall" ||
+                AICoopGameComponent.Current == null || !AICoopGameComponent.Current.IsPerimeterCell(__0.Map, __0.Position);
+        }
+    }
+
+    [HarmonyPatch(typeof(Pawn_JobTracker), "TryTakeOrderedJob")]
+    internal static class AICoopPlayerOrderedJobPatch
+    {
+        public static void Prefix(Pawn_JobTracker __instance)
+        {
+            Event input = Event.current;
+            if (AICoopActionExecutor.IsExecuting || input == null ||
+                (input.rawType != EventType.MouseDown && input.rawType != EventType.MouseUp && input.rawType != EventType.KeyDown)) return;
+            Pawn pawn = Traverse.Create(__instance).Field("pawn").GetValue<Pawn>();
+            AICoopKitingManager.YieldToPlayer(pawn);
+        }
+    }
+
     [HarmonyPatch(typeof(Pawn_DraftController), "set_Drafted")]
     internal static class AICoopDraftKitingPatch
     {
         public static void Postfix(Pawn_DraftController __instance, bool __0)
         {
             Pawn pawn = Traverse.Create(__instance).Field("pawn").GetValue<Pawn>();
-            AICoopKitingManager.NotifyDraftChanged(pawn, __0);
+            if (AICoopAgentBridge.IsConnected) AICoopKitingManager.NotifyDraftChanged(pawn, __0);
         }
     }
 
@@ -24,7 +57,7 @@ namespace AICoopCompanion
     {
         public static void Postfix()
         {
-            AICoopKitingManager.PollDraftStates();
+            if (AICoopAgentBridge.IsConnected) AICoopKitingManager.PollDraftStates();
             AICoopAgentRuntime.Update();
             AICoopAgentBridge.PumpMainThread();
         }
@@ -146,7 +179,7 @@ namespace AICoopCompanion
     {
         public static bool Prefix(object obj)
         {
-            if (AICoopMod.Settings == null || AICoopMod.Settings.allowSharedControl) return true;
+            if (AICoopMod.Settings == null || AICoopMod.Settings.PlayerCanControlAI) return true;
             if (AICoopGameComponent.Current == null) return true;
             Pawn pawn = obj as Pawn;
             if (pawn != null && AICoopGameComponent.Current.IsAI(pawn))
@@ -241,13 +274,13 @@ namespace AICoopCompanion
         public static bool ShouldBlockResources(Pawn pawn, Thing thing)
         {
             AICoopGameComponent component = AICoopGameComponent.Current;
-            return component != null && component.IsAI(pawn) && component.IsConstructionWaitingForPlayer(thing);
+            return AICoopAgentBridge.IsConnected && component != null && component.IsAI(pawn) && component.IsConstructionWaitingForPlayer(thing);
         }
 
         public static bool ShouldBlockConstruction(Pawn pawn, Thing thing)
         {
             AICoopGameComponent component = AICoopGameComponent.Current;
-            return component != null && component.IsAI(pawn) && !component.CanAIConstruct(pawn, thing);
+            return AICoopAgentBridge.IsConnected && component != null && component.IsAI(pawn) && !component.CanAIConstruct(pawn, thing);
         }
     }
 

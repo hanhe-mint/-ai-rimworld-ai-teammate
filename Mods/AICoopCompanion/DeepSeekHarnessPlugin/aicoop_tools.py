@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 
-CATALOG_VERSION = 5
+CATALOG_VERSION = 6
 
 
 def argument(
@@ -102,6 +102,10 @@ TOOLS: list[dict[str, Any]] = [
     tool("note_read", "memory", "读取当前存档中尚未完成的 AI 待办及其时间刻。", "none", ["NOTE_READ"], [], {}),
     tool("note_done", "memory", "将存档内指定编号的 AI 待办标记为完成。", "none", ["NOTE_DONE", "${note_id}"],
          [argument("note_id", "integer", "NOTE_READ 返回的待办编号。")], {"note_id": 1}),
+    tool("map_scan", "inspection", "读取矩形内地形、物品、人物、蓝图、区域与设施状态；每页128格，next非done时用相同范围及next作为offset续读。", "MAP_SCAN",
+         ["MAP_SCAN", "${map_id}", "${x1}", "${z1}", "${x2}", "${z2}", "${offset}"],
+         [INT_MAP(), *RECT(), argument("offset", "integer", "续页偏移，默认0。", required=False, minimum=0)],
+         {"map_id": 0, "x1": 100, "z1": 100, "x2": 110, "z2": 110}),
     tool("guide_done", "progress", "将当前攻略任务标记为完成。", "none", ["GUIDE_DONE", "${task_id}"],
          [argument("task_id", "string", "当前攻略任务编号。")], {"task_id": "01.03"}),
     tool("preset_build", "building", "按房间预设自动选址，或在指定锚点放置一个预设房间。", "PRESET",
@@ -138,17 +142,12 @@ TOOLS: list[dict[str, Any]] = [
           argument("rotation", "integer", "可选旋转，0-3。", required=False, minimum=0, maximum=3),
           argument("stuff_def", "string", "可选建筑材料 ThingDef；提供时也必须提供 rotation。", required=False)],
          {"map_id": 1, "build_def": "ElectricStove", "x": 46, "z": 46, "rotation": 0, "stuff_def": "Steel"}),
-    tool("build_perimeter", "building", "在居住区外至少 4 格放置岩石外围墙，只保留左、右正中两个开口。", "F",
-         ["F", "${map_id}", "${margin}", "${stuff_def}"],
-         [INT_MAP(), argument("margin", "integer", "外围墙间距，至少 4 格。", minimum=4),
+    tool("build_perimeter", "building", "围住所有居住区（包括分离区域），单层矩形石墙不占居住区，仅遇不可建地形绕行，左右留口；新圈内记录的旧外墙自动标记拆除，旧蓝图取消，房间墙及重合段保留。", "F",
+         ["F", "${map_id}", "${stuff_def}"],
+         [INT_MAP(),
           argument("stuff_def", "string", "可选岩石材料 ThingDef。", required=False)],
-         {"map_id": 1, "margin": 4, "stuff_def": "BlocksGranite"}),
-    tool("build_outer_perimeter", "building", "在已完成普通外围墙外再间隔 4 格放置更大的石墙，只留左侧正中一个开口并自动放置安全大门。", "F2",
-         ["F2", "${map_id}", "${margin}", "${stuff_def}"],
-         [INT_MAP(), argument("margin", "integer", "普通外围墙与第二层墙之间的间隔，至少 4 格。", minimum=4),
-          argument("stuff_def", "string", "可选岩石材料 ThingDef。", required=False)],
-         {"map_id": 1, "margin": 4, "stuff_def": "BlocksGranite"}),
-    tool("grow_fertile", "zone", "从起点扩展为同一片连续最高肥力种植区。", "G",
+         {"map_id": 1, "stuff_def": "BlocksGranite"}),
+    tool("grow_fertile", "zone", "从起点扩展为连续最高肥力种植区，每次最多15×所有存活殖民者人数（AI+玩家）格。", "G",
          ["G", "${map_id}", "${plant_def}", "${x}", "${z}", "fertile_adjacent"],
          [INT_MAP(), argument("plant_def", "string", "已解锁可种植植物 ThingDef。"),
           argument("x", "integer", "候选起点 X。"), argument("z", "integer", "候选起点 Z。")],
@@ -407,10 +406,6 @@ TOOLS: list[dict[str, Any]] = [
           argument("direction", "string", "交易方向。", enum=["buy", "sell"]), argument("thing_def", "string", "交易物 ThingDef。"),
           argument("count", "integer", "交易数量。", minimum=1)],
          {"world_object_id": 3001, "pawn_id": 101, "direction": "buy", "thing_def": "Steel", "count": 100}),
-    tool("world_quest_accept", "world", "在设置允许且玩家要求时接受一个世界任务。", "WORLD.quest",
-         ["WORLD", "quest", "${quest_id}", "accept", "${pawn_id}"],
-         [argument("quest_id", "integer", "WORLD_QUEST 中的任务 ID。"), argument("pawn_id", "integer", "AI 接受者 ID。")],
-         {"quest_id": 77, "pawn_id": 101}),
 ]
 
 

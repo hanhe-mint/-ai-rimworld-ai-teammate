@@ -17,6 +17,12 @@ namespace AICoopCompanion
 
         public AICoopLogTab() { closeOnAccept = false; }
 
+        public override void PostOpen()
+        {
+            forcePause = chatPage && AICoopMod.Settings != null && AICoopMod.Settings.pauseWhileChatOpen;
+            base.PostOpen();
+        }
+
         public override Vector2 InitialSize
         {
             get { return new Vector2(760f, 520f); }
@@ -24,6 +30,7 @@ namespace AICoopCompanion
 
         public override void OnAcceptKeyPressed()
         {
+            if (Event.current != null && Event.current.shift) return;
             if (chatPage) SendChat();
             if (Event.current != null) Event.current.Use();
         }
@@ -48,6 +55,7 @@ namespace AICoopCompanion
                 OnAcceptKeyPressed();
             if (Widgets.ButtonText(new Rect(inRect.x, inRect.y, 110f, 30f), "聊天")) chatPage = true;
             if (Widgets.ButtonText(new Rect(inRect.x + 116f, inRect.y, 110f, 30f), "日志")) chatPage = false;
+            forcePause = chatPage && AICoopMod.Settings != null && AICoopMod.Settings.pauseWhileChatOpen;
             Rect body = new Rect(inRect.x + 8f, inRect.y + 38f, inRect.width - 16f, inRect.height - 46f);
             if (chatPage) DrawChatPage(body, component);
             else DrawLogPage(body, component);
@@ -55,7 +63,7 @@ namespace AICoopCompanion
 
         private void DrawChatPage(Rect rect, AICoopGameComponent component)
         {
-            Rect outer = new Rect(rect.x, rect.y, rect.width, rect.height - 42f);
+            Rect outer = new Rect(rect.x, rect.y, rect.width, rect.height - 108f);
             float width = outer.width - 20f;
             float height = 8f;
             foreach (string message in component.ChatMessages)
@@ -74,8 +82,9 @@ namespace AICoopCompanion
                 y += rowHeight + 12f;
             }
             Widgets.EndScrollView();
-            chatInput = Widgets.TextField(new Rect(rect.x, rect.yMax - 34f, rect.width - 88f, 32f), chatInput);
-            if (Widgets.ButtonText(new Rect(rect.xMax - 80f, rect.yMax - 34f, 80f, 32f), "发送")) SendChat();
+            chatInput = Widgets.TextArea(new Rect(rect.x, rect.yMax - 100f, rect.width - 88f, 72f), chatInput);
+            if (Widgets.ButtonText(new Rect(rect.xMax - 80f, rect.yMax - 100f, 80f, 72f), "发送")) SendChat();
+            Widgets.Label(new Rect(rect.x, rect.yMax - 24f, rect.width, 24f), "Enter 发送 · Shift+Enter 换行");
         }
 
         private void DrawLogPage(Rect inRect, AICoopGameComponent component)
