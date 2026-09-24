@@ -2,4 +2,4 @@ Microsoft.Net.Compilers.Toolset 4.8.0：NuGet 编译器，packages/compilers，�
 Microsoft.NETFramework.ReferenceAssemblies.net471 1.0.3：NuGet .NET 4.7.1 编译参考程序集，packages/net471，许可证随包保留。
 Lib.Harmony 2.3.3：NuGet Harmony 编译 API 依赖，packages/harmony，MIT。不要将此 DLL 复制进 Mod；运行时由单独 Harmony 模组提供。
 源码包没有游戏/Unity 程序集、DSH 程序、用户配置和 API 密钥。游戏引用在编译时从用户指定游戏目录读取。
-插件的 package.json 许可声明与第三方许可证各自适用。整个项目的开源许可证由作者决定，打包没有代替作者授予额外许可。
+项目原创代码采用 GPL-3.0-only；第三方编译依赖仍适用各自原有许可证。详见根目录 LICENSE 和“授权说明.txt”。

@@ -9,6 +9,8 @@
   },
   "files": [
     "index.js",
+    "LICENSE",
+    "授权说明.txt",
     "aicoop_cli.py",
     "aicoop_mcp.py",
     "aicoop_tools.py",
@@ -24,7 +26,7 @@
     "rimworld",
     "mcp"
   ],
-  "license": "MIT",
+  "license": "GPL-3.0-only",
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1",
     "@deepseek-ai/dsh-commands": "^0.1.0-rc.6",

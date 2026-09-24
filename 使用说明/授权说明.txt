@@ -1,0 +1,16 @@
+环世界AI队友
+Copyright (C) 2026 寒荷mint
+
+本项目由作者拥有著作权的原创程序代码按 GNU General Public License version 3（GPL-3.0-only）发布，完整英文协议见根目录 LICENSE。本说明是便于理解的摘要，不替代协议正文。
+允许使用、修改、再分发与商用。分发修改版或基于本程序的衍生作品时，须按 GPL-3.0 提供对应源码、保留版权和协议声明，并注明修改。不向他人分发的私人修改不要求公开。
+本程序按现状提供，不提供任何担保。请备份存档。
+
+第三方边界
+packages 中的编译器、参考程序集和 Harmony，以及玩家包中的 Python、独立 Harmony 模组等，仍适用各自原有许可证；请保留其许可证与第三方声明。
+RimWorld、DLC、DeepSeek Harness 及第三方攻略、布局、图片等不属于作者的内容，不因本声明获得额外授权；对这些内容的使用与再分发须遵守各自权利和许可。
+此前已经按 MIT 等许可证发布的版本，不会因本次新增 GPL 而被撤回既有授权。
+
+对应源码与构建说明
+https://github.com/hanhe-mint/-ai-rimworld-ai-teammate
+Source/AICoopCompanion 为 C# 源码；Mods/AICoopCompanion/DeepSeekHarnessPlugin 为插件及 CLI 源码。
+编译方法见“源码与上传说明.txt”。版本对应关系见 GitHub Release 的源码链接。
