@@ -16,7 +16,7 @@ from learning import LearningFile
 
 
 SERVER_NAME = "rimworld-ai-coop"
-SERVER_VERSION = "0.3.6"
+SERVER_VERSION = "0.4.0"
 DEFAULT_PROTOCOL_VERSION = "2025-06-18"
 PLUGIN_DIR = Path(__file__).resolve().parent
 MOD_ROOT = PLUGIN_DIR.parent

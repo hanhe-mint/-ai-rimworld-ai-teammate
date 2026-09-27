@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-rimworld-prompt-ui",
-  "version": "0.3.6",
+  "version": "0.4.0",
   "type": "module",
   "main": "index.js",
   "exports": { ".": "./index.js", "./client": "./client.js", "./package.json": "./package.json" },
