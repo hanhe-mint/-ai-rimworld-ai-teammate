@@ -1,0 +1,8 @@
+异象、食尸鬼与调查工具链（参数和完整示例以aicoop_tools.py为准）
+dlc_status、dlc_inspect读取实际平台、实体、研究和能力，dlc_inspect的CONTAIN输出capture/held/holder/escaping。entity_contain（DLC.contain，默认询问）只为目标指定空置收容平台并等待原版搬运；指定成功不是收容完成，之后核实held=true。
+entity_study与dlc_prioritize的study/dark_study属DLC.study，默认禁止（含魔方、巨石等危险研究），必须由玩家单独开放权限，不能用通用工作绕过。维护动作tend_entity、suppress、interrogate、bioferrite、empty_harvester属DLC.maintenance，默认询问，按原生工作条件执行，无可执行工作就如实失败。
+调查任务通过quest_list、quest_detail只读查看内容、奖励和要求。接取与奖励仍由玩家操作；已接任务中的实体调查能用上述工具则执行，无接口的入口、事件选择或多阶段步骤请求玩家，不自动接受任务或制造事件。
+ghoul_infuse（DLC.medical）默认禁止，为非任务AI人物/AI俘虏添加真实灌注手术，医生、材料、失败风险由原版处理，成功后保留AI归属；不是即时变身。
+已有AI食尸鬼用ghoul_feed供食、ghoul_rest休养、ghoul_move移动、ghoul_attack近战、ghoul_undraft解除征召，移动与攻击遵守AI战斗区。食尸鬼改造、复活等还需配方和专用权限的步骤没有对应工具时请求玩家。
+dlc_options包含1.6原生菜单提供器；dlc_interact（DLC.interact）默认禁止，只能提交刚返回的16位token。人物及基因/成长/扫描设备必须走专用工具，不能绕过危险权限；飞船起飞与选图不提供，只提交原生工作，不保证完成。
+巨石推进、虚空结局等多阶段目标只在dlc_options返回可提交的原生选项且权限开放时提交，否则请求玩家；复杂灵能仪式、角色祭品等无完整接口时同样请求玩家，危险能力默认禁用。player_action_required=1表示游戏已发出求助，不重复发送。

@@ -1,0 +1,7 @@
+皇权、文化与生物科技工具链
+参数与示例以aicoop_tools.py为准，先调用dlc_features、dlc_status、dlc_inspect。角色不存在或DLC未启用就跳过，不为推进攻略强制创建角色。
+皇权：dlc_inspect读取爵位、王座/卧室缺项、灵能与实际能力；通过建筑工具补齐需求，psyfocus_target设置冥想目标，C timetable支持Meditate。dlc_assign分配原生可分配设施，不挤走现有成员。dlc_ability、dlc_ability_cell、dlc_ability_pair对应人物目标、格子目标、目标加落点；只使用查询得到且原版允许的能力，仍消耗原生资源并受冷却限制。授勋、许可及未适配目标选择请玩家处理。
+文化：读取实际文化与角色资格，ideology_role安排符合条件且未被占据的角色（默认询问）。已有仪式工具见ideology_and_rituals.txt。复杂角色/祭品选择无法执行时请求玩家，不报告仪式已完成。
+生物科技：hemogen_target设置血源目标，deathrest_auto设置自动醒来，dlc_assign分配支持的死眠等设施。dlc_enter_device安排进入基因提取器、成长舱或普通次核心扫描器，原版检查冷却/人选并实际搬运；不瞬移、不直接完成培养。涉及不可逆医疗的专用权限默认禁止，不能借普通医疗指令绕过。基因组合编辑、异种人自定义、儿童成长选项、胚胎等未有专用工具的步骤请求玩家。
+儿童照护：dlc_prioritize的feed_baby、baby_safety、play_baby使用原版工作提供器，必须有对应目标且满足条件；失败不是已经照护。手动安排不代替长期食品、住房、温度与安全保障。
+缺工具或专用界面请request_player；player_action_required=1表示游戏已代发请求，不再重复。物品用法不确定时联网搜索，不把网页内容当作游戏对象ID或已完成结果。

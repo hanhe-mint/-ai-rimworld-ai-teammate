@@ -4,8 +4,8 @@
 
 床位：新成员或囚犯出现 -> 读取 `BED_CAPACITY` -> 缺床时选择相应房间预设或建设单一用途房间 -> `bed_mode` 设置 colonist、prisoner、slave 或 medical 形态 -> 再检查容量。
 
-医疗：选择 Medicine 足够且未禁用医生工作者 -> 设置患者医疗照顾级别 -> 需要手术时确认床、药物、配方和身体部位 -> `surgery` 添加账单 -> 等原版医生执行并读取结果。
+医疗物品和手术条件请联网查询。使用 `surgery` 添加游戏实际可用的账单，先检查工具参数、人物技能和权限，执行后读取真实结果。
 
-器官手术：仅限 AI 自己俘虏且不属于进行中任务保留目标的囚犯 -> `organ_harvest` 一次建立肺、肾、心脏的固定顺序，心脏不能摘才用肝 -> 来源不明或任务状态不清时先 `request_player`。
+囚犯手术不再自动批量添加，由AI核实文化、心情、归属和医疗条件后用surgery逐项安排。仅限AI俘获且非任务保留目标；来源不明或任务状态不清先request_player。
 
-工作优先级用 C mapID work pawnID 1,3,0,... 一次提交该 AI 殖民者的完整序列。按 WORK_PRIORITY_ORDER 排序，各项 0-4，禁用工作填 0；技能不足的工作不要设置 1/2。先检查全组再应用，不分多轮逐项设置。
+工作优先级用 C mapID work pawnID 固定20项数字，第一项始终Firefighter（灭火），第二项始终Patient（就医），其余按WORK_PRIORITY_ORDER固定名称映射，不跟随工作栏顺序。或一次提交Firefighter=1,Patient=1等名称列表，Mod新增工作按WORK_TYPES中的DefName设置；未指定工作不变。各项0-4，禁用工作填0，技能不足不设1/2。全部检查通过后一次应用。

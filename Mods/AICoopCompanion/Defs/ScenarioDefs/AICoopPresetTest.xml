@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <ScenPartDef>
+    <defName>AICoopPresetTestSetup</defName>
+    <label>预设测试场初始化</label>
+    <category>Fixed</category>
+    <scenPartClass>AICoopCompanion.ScenPart_AICoopPresetTest</scenPartClass>
+  </ScenPartDef>
+  <ScenarioDef ParentName="ScenarioBase">
+    <defName>AICoopPresetTest</defName>
+    <label>AI队友：建筑预设测试场</label>
+    <description>仅用于测试建筑预设与共墙拼接。开局清除全图植物、山体、建筑、散落物品和野生动物，移除所有屋顶，地面统一为可建造的泥土，全部研究完成。保留四名开局殖民者。无需连接Harness；开启开发者模式后，在区域菜单使用“创建预设”。不要用于正常生存开局。</description>
+    <scenario>
+      <summary>空白平地、四名殖民者、全部研究完成的预设测试场。</summary>
+      <parts>
+        <li Class="ScenPart_ConfigPage_ConfigureStartingPawns">
+          <def>ConfigPage_ConfigureStartingPawns</def>
+          <pawnCount>4</pawnCount>
+          <pawnChoiceCount>8</pawnChoiceCount>
+        </li>
+        <li Class="ScenPart_PlayerPawnsArriveMethod">
+          <def>PlayerPawnsArriveMethod</def>
+          <method>Standing</method>
+          <visible>false</visible>
+        </li>
+        <li Class="AICoopCompanion.ScenPart_AICoopPresetTest">
+          <def>AICoopPresetTestSetup</def>
+          <visible>false</visible>
+        </li>
+      </parts>
+    </scenario>
+  </ScenarioDef>
+</Defs>

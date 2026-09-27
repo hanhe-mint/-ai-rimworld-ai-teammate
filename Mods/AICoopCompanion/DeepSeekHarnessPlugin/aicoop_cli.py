@@ -141,6 +141,13 @@ def run() -> int:
         if args.command == "tools":
             print_json(catalog(args.name))
             return 0
+        if args.command == "execute":
+            commands = load_commands(args, parser)
+            if commands.strip().startswith("REF "):
+                from aicoop_mcp import call_tool
+                response = call_tool("cli_execute", {"commands": commands})
+                print_json(response)
+                return 2 if response.get("isError") else 0
 
         prepared_tool: str | None = None
         prepared_command: str | None = None

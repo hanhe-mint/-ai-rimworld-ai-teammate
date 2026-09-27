@@ -15,6 +15,7 @@ $entryPath = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot 'index.js')).Pa
 $entry = [System.Uri]::new($entryPath).AbsoluteUri
 $python = (Get-Command $PythonCommand -ErrorAction Stop).Source.Replace('\','/')
 $entry = $entry.Replace("'", "''")
+$uiEntry = [System.Uri]::new((Resolve-Path -LiteralPath (Join-Path $PSScriptRoot 'PromptUI\index.js')).Path).AbsoluteUri.Replace("'", "''")
 $python = $python.Replace("'", "''")
 $path = Join-Path $profileDir 'cordis.patch.yml'
 $existing = if (Test-Path -LiteralPath $path) { [IO.File]::ReadAllText($path) } else { '' }
@@ -23,6 +24,8 @@ $end = '# END rimworld-ai-coop managed preset'
 $block = @"
 $start
 - insert:
+    - id: rimworld-prompt-ui
+      name: '$uiEntry'
     - id: preset-rimworld
       name: '@deepseek-ai/dsh-agent-preset'
       config:

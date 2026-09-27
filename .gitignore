@@ -1,4 +1,7 @@
 # Private/local runtime state
+**/AI提示词.txt
+**/学习内容.txt
+**/卸载保留/
 install-state.json
 HarnessHome/
 UserData/

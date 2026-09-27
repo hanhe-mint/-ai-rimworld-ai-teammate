@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import shlex
 import sys
 import time
 from pathlib import Path
@@ -11,15 +12,17 @@ from typing import Any
 
 from aicoop_cli import AgentBridgeClient
 from aicoop_tools import CATALOG_VERSION, TOOLS, build_command, public_tool, validate_catalog
+from learning import LearningFile
 
 
 SERVER_NAME = "rimworld-ai-coop"
-SERVER_VERSION = "0.3.5"
+SERVER_VERSION = "0.3.6"
 DEFAULT_PROTOCOL_VERSION = "2025-06-18"
 PLUGIN_DIR = Path(__file__).resolve().parent
 MOD_ROOT = PLUGIN_DIR.parent
 REFERENCE_ROOTS = {
     "preset": MOD_ROOT / "Presets",
+    "layout": MOD_ROOT / "成品",
     "task": MOD_ROOT / "Guides" / "Tasks",
     "tool_chain": MOD_ROOT / "Knowledge" / "ToolChains",
     "knowledge": MOD_ROOT / "Knowledge" / "LongTerm",
@@ -32,6 +35,7 @@ state_initialized = False
 manual_connection = False
 consecutive_poll_failures = 0
 pending_agent_feedback: list[dict[str, Any]] = []
+learning = LearningFile(MOD_ROOT / "Knowledge" / "学习内容.txt")
 
 
 def write_message(message: dict[str, Any]) -> None:
@@ -127,14 +131,16 @@ def read_state(force_full: bool = False) -> dict[str, Any]:
 def reference_files(category: str) -> dict[str, Path]:
     root = REFERENCE_ROOTS.get(category)
     if root is None:
-        raise ValueError("category 必须是 preset、task、tool_chain 或 knowledge。")
+        raise ValueError("category 必须是 preset、layout、task、tool_chain 或 knowledge。")
     if not root.is_dir():
         raise RuntimeError("资料目录不存在：" + str(root))
-    pattern = "room_*.txt" if category == "preset" else ("task_*.txt" if category == "task" else "*.txt")
+    pattern = "task_*.txt" if category == "task" else "*.txt"
     return {
         path.relative_to(root).as_posix(): path
-        for path in sorted(root.rglob(pattern), key=lambda item: item.as_posix().lower())
-        if path.is_file()
+        for path in sorted((root.glob(pattern) if category in ("preset", "layout") else root.rglob(pattern)), key=lambda item: item.as_posix().lower())
+        if path.is_file() and path.resolve().is_relative_to(root.resolve()) and
+        (category not in ("preset", "layout") or any(line.strip().startswith("ROOM " if category == "preset" else "LAYOUT ")
+         for line in path.read_text(encoding="utf-8-sig").splitlines()))
     }
 
 
@@ -153,7 +159,7 @@ def reference_index(category: str) -> dict[str, Any]:
         }
     entries = []
     for name, path in files.items():
-        first_line = next((line.strip() for line in path.read_text(encoding="utf-8").splitlines() if line.strip()), "-")
+        first_line = next((line.strip() for line in path.read_text(encoding="utf-8-sig").splitlines() if line.strip() and not line.lstrip().startswith("#")), "-")
         entries.append({"file": name, "summary": first_line[:240]})
     return {"ok": True, "category": category, "files": entries}
 
@@ -171,7 +177,7 @@ def reference_read(category: str, name: str) -> dict[str, Any]:
     path = files.get(normalized_name)
     if path is None:
         raise ValueError("文件不在该资料索引中；先调用 reference_index 获取准确文件名。")
-    content = path.read_text(encoding="utf-8")
+    content = path.read_text(encoding="utf-8-sig")
     return {"ok": True, "category": category, "file": name, "content": content}
 
 
@@ -273,11 +279,11 @@ def mcp_tools() -> list[dict[str, Any]]:
         },
         {
             "name": "reference_index",
-            "description": "列出按需资料。preset 返回 16 个独立建筑预设文件；tool_chain 和 knowledge 返回主题文件；task 只返回阶段计数，不泄露未来任务。",
+            "description": "列出按需资料。preset返回实际目录中的房间，layout返回玩家的成品布局（不含说明和示例）；task只返回阶段计数。",
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "category": {"type": "string", "enum": ["preset", "task", "tool_chain", "knowledge"]}
+                    "category": {"type": "string", "enum": ["preset", "layout", "task", "tool_chain", "knowledge"]}
                 },
                 "required": ["category"],
                 "additionalProperties": False,
@@ -289,7 +295,7 @@ def mcp_tools() -> list[dict[str, Any]]:
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "category": {"type": "string", "enum": ["preset", "task", "tool_chain", "knowledge"]},
+                    "category": {"type": "string", "enum": ["preset", "layout", "task", "tool_chain", "knowledge"]},
                     "file": {"type": "string", "description": "reference_index 或 GUIDE_REFERENCE 给出的相对文件名。"},
                 },
                 "required": ["category", "file"],
@@ -309,7 +315,7 @@ def mcp_tools() -> list[dict[str, Any]]:
         },
         {
             "name": "cli_execute",
-            "description": "执行一条或多条 RimWorld CLI 指令。每行一条；这是 agent 模式唯一的游戏操作入口。不要在普通文本中输出待执行指令。",
+            "description": "执行一条或多条 RimWorld CLI 指令。每行一条；这是agent唯一游戏操作入口。学习模式可单独调用LEARN_READ、LEARN_ADD JSON字符串、LEARN_COMPACT含sha256和text的JSON对象；学习指令不与游戏命令混合。不要在普通文本输出待执行指令。",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -360,6 +366,7 @@ def poll_agent_triggers(flush_feedback: bool = False) -> dict[str, Any]:
             manual_connection = False
             return {"connected": False, "error": "游戏返回的 results 格式无效。"}
         next_cursor = result.get("next")
+        learning.enabled = result.get("learningMode") is True
         if isinstance(next_cursor, int):
             agent_event_cursor = next_cursor
         all_events = [event for event in result.get("events") or []
@@ -383,6 +390,7 @@ def poll_agent_triggers(flush_feedback: bool = False) -> dict[str, Any]:
             "sessionChanged": changed,
             "events": events,
             "decisionIntervalSeconds": result.get("decisionIntervalSeconds"),
+            "learningMode": result.get("learningMode", False),
         }
     except (OSError, ConnectionError, RuntimeError) as error:
         consecutive_poll_failures += 1
@@ -431,6 +439,7 @@ def connect_game() -> dict[str, Any]:
 
 def disconnect_game() -> dict[str, Any]:
     global manual_connection, model_event_cursor, agent_event_cursor, bridge_session, state_initialized, pending_agent_feedback
+    learning.enabled = False
     try:
         bridge_call("agent_disconnect")
     except (OSError, ConnectionError, RuntimeError):
@@ -490,6 +499,26 @@ def call_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
                 raise ValueError("commands 必须是非空字符串。")
             if "\x00" in commands:
                 raise ValueError("commands 不能包含 NUL 字符。")
+            if commands.strip().startswith("LEARN_"):
+                if not manual_connection:
+                    raise ValueError("请先连接游戏。")
+                if "\n" in commands.strip():
+                    raise ValueError("学习指令必须单独一行调用，JSON中的换行须转义。")
+                result = learning.execute(commands)
+                return text_result(result, not result.get("ok", False))
+            if learning.enabled and learning.read()["compression_required"]:
+                return error_result("学习内容超过272KiB：请先LEARN_READ并用LEARN_COMPACT压缩，再进行本轮操作。", "learning_compaction_required")
+            if commands.strip().startswith("REF "):
+                if "\n" in commands.strip():
+                    raise ValueError("REF 资料读取请单独调用，不与建造命令混合。")
+                tokens = shlex.split(commands)
+                if len(tokens) not in (3, 4) or tokens[1] not in ("preset", "layout"):
+                    raise ValueError("格式：REF preset|layout list，或 REF preset|layout read 文件名")
+                if tokens[2] == "list" and len(tokens) == 3:
+                    return text_result(reference_index(tokens[1]))
+                if tokens[2] == "read" and len(tokens) == 4:
+                    return text_result(reference_read(tokens[1], tokens[3]))
+                raise ValueError("REF 仅支持 list/read。")
             response = bridge_call("execute", commands=commands)
             payload = {"ok": response.get("ok"), "commands": commands, "bridge": response}
             return text_result(payload, bridge_failed(response))

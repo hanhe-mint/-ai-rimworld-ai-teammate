@@ -1,0 +1,10 @@
+机械师工具链（参数和完整示例以aicoop_tools.py为准）
+1. dlc_features、dlc_status查看启用DLC、机械师带宽、现有控制组及机械体；dlc_inspect查看设备、实际能力与配方。不创造身份、带宽或免费机械体。
+2. mech_control安排原生接管，mech_repair维修，mech_autorepair设置自动维修，mech_haul把倒地/停机机械体搬回原生可用充电器（可用普通AI搬运者）；只操作AI可控机械师所属或原版允许接管的殖民地机械体，不夺取玩家专属或敌方机械体。
+3. mech_bill设置指定机械师在孕育器的孕育/复活账单；同配方同执行者更新次数而不叠加。原版处理材料、带宽和周期，账单成功不等于机械体完成。
+4. mech_group分配现有组，mech_mode选择Work/Recharge/SelfShutdown，mech_charge设电量上下限，mech_escort护送己方人物。控制组数量由原版实际装备决定，不无限添加。
+5. scanner_init点原生开始准备扫描，scanner_cancel取消装载或普通扫描；dlc_enter_device安排AI可控人物/AI俘虏进入普通次核心扫描器，等待步行搬运，不瞬移入舱。mech_ripscan是致死撕裂扫描专用工具，DLC.ripscan默认禁止且严禁任务保留人物；已有人进入致死扫描时取消交玩家确认。
+6. pollution_area指定清污区域，废料储存、运输及建筑沿用现有工具，不直接删除污染。
+7. mech_move/mech_attack/mech_undraft征召受控机械体移动、攻击敌对目标和解除征召，受机械师指挥范围限制；mech_carrier_release按原生库存与冷却释放子机，不免费生成。dlc_inspect确认能力后使用获许可的dlc_ability，不免费获得能力。
+8. mech_boss_options只读召唤选项，mech_boss_call（DLC.boss）、mech_disconnect和mech_disassemble（DLC.mech_destructive）默认禁止；玩家开放权限后仍检查原生条件和必要确认，不使用开发者生成替代。
+9. 机械师身份获取、植入与机械配方生产沿用已适配且有权限的真实医疗/生产工具；无对应工具、专用界面或复杂目标选择时request_player。未覆盖内容不得报告完成，收到player_action_required=1不重复求助。

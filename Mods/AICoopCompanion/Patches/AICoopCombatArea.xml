@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Patch>
+  <Operation Class="PatchOperationAdd">
+    <xpath>Defs/DesignationCategoryDef[defName="Zone"]/specialDesignatorClasses</xpath>
+    <value>
+      <li>AICoopCompanion.Designator_AICoopCombat</li>
+      <li>AICoopCompanion.Designator_AICoopCombatClear</li>
+      <li>AICoopCompanion.Designator_AICoopTask</li>
+      <li>AICoopCompanion.Designator_AICoopDevPreset</li>
+      <li>AICoopCompanion.Designator_AICoopPresetArea</li>
+    </value>
+  </Operation>
+</Patch>

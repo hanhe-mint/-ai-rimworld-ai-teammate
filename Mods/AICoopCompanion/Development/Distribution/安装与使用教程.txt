@@ -1,0 +1,93 @@
+环世界AI队友 0.3.6：安装、升级与卸载
+
+一、准备
+1. Windows 64位，环世界1.6。先备份存档，退出游戏和DSH。
+2. 必须自行安装DeepSeek Harness 0.1.7及以上。新按钮按0.1.7-rc.2适配，建议使用该版或兼容后续版。
+3. 本包没有DSH本体，也不会替你下载、启动DSH或填写模型密钥。模型/API/搜索服务均在自己的DSH里设置。
+4. Harmony是独立前置：已有适配1.6的Harmony直接使用，不要重复安装。没有时可使用OptionalMods里的Harmony；仍应确认适配自己的游戏和其他Mod。
+5. 将整个ZIP解压到普通文件夹，例如D:\Downloads\rimworld-ai-teammate。不要在压缩软件里直接运行脚本。保留各子文件夹的相对关系。
+6. Runtime\Python是插件的独立Python运行环境，不是DSH。无需另装Python，也不改变系统Python。
+
+二、先找到两个目录
+【游戏目录】包含RimWorldWin64.exe的文件夹，不是Mods文件夹，也不是Saves存档文件夹。
+Steam：库里右键环世界→管理→浏览本地文件；其他安装方式：右键游戏快捷方式→打开文件所在位置。复制资源管理器地址栏里的路径。
+示例：D:\SteamLibrary\steamapps\common\RimWorld。
+【DSH Home】保存个人配置、会话和profiles的目录。它不等于DSH程序安装目录，不等于node_modules，也不是浏览器下载目录。
+真正的Home下面应存在profiles\web；先启动一次DSH的Web界面让它生成。若使用了别的profile，需改用其名字。
+不要照抄作者电脑的路径，每个人目录可能不同。可以右键地址栏复制地址；粘贴时允许外层双引号。
+
+三、官方DSH用户：如何确认Home并安装插件
+1. 按官方说明安装、启动自己的DSH，完成模型配置，确认普通聊天可用。
+2. 如果启动时指定了Home参数或设置了DSH_HOME环境变量，以自己指定的目录为准；不知道时查看自己的启动命令、终端启动信息或官方的目录说明，不要猜一个目录。
+3. 在PowerShell输入 $env:DSH_HOME 可查看当前终端的这个环境变量。为空不代表没Home，只表示没有在这个终端设置；从快捷方式启动的环境也可能不同。
+4. 可以先在自己选择的目录运行官方支持的启动方式，并通过DSH_HOME明确指定Home；已有用户不要随便切换Home，否则会看不到原来的模型和会话，旧数据并没有消失。
+5. 确认该目录有profiles\web，然后完全退出DSH。
+6. 双击本包01-install.cmd，依次填写游戏目录与DSH Home，等待成功提示。默认profile为web。
+7. 使用其他profile时在PowerShell调用：
+   powershell -NoProfile -ExecutionPolicy Bypass -File "D:\Downloads\rimworld-ai-teammate\install.ps1" -GamePath "你的游戏目录" -DshHome "你的Home目录" -Profile "你的profile名字"
+8. 脚本复制Mod与Python到游戏目录，再向该Home的profiles\web\cordis.patch.yml写入本插件注册块，不修改DSH核心文件，不覆盖模型密钥。
+
+四、GitHub dsh-launcher启动器用户：如何确认Home并安装插件
+1. 启动器中确认自己当前实例使用的DSH版本与Home。选择已存在的Home，不要只看版本文件夹名字；新DSH版本可能继续使用旧版本名称的Home。
+2. 优先使用启动器提供的“打开Home目录/数据目录”功能。如果界面名称不同，查看实例详情或Home管理列表中显示的路径。
+3. 数据目录内通常有homes与versions：homes里的具体目录才可能是Home；versions是程序，不要填它。
+4. 用资源管理器确认选定Home下面确实有profiles\web。启动器可管理多个Home，必须选择将要运行这个AI队友的实例使用的那一个。
+5. 完全停止该DSH实例，运行本包01-install.cmd，填写游戏目录与上述Home。其余与官方版步骤相同。
+6. 不需要复制整个启动器或DSH到游戏目录。安装完成后仍使用自己的启动器启动原实例。
+
+五、安装脚本会做什么
+复制Mod\AICoopCompanion到游戏\Mods\AICoopCompanion；复制独立Python到已安装Mod的Runtime\Python；配置Python加载插件的路径；注册环世界模式和独立AI提示词界面。
+不会安装Harmony、修改存档、购买额度或替换DSH。安装失败会显示具体原因。
+若提示已有旧Mod，先按升级章节备份移走旧版本，不要把两个版本同时放在Mods里。
+脚本完成后，解压包里的Python不再是运行路径，可将解压包移走；但要保留卸载脚本和install-state.json方便以后卸载。
+
+六、手动安装（不使用一键脚本）
+1. 将Mod\AICoopCompanion复制到游戏\Mods，检查不要出现AICoopCompanion\AICoopCompanion双层嵌套。
+2. 在安装后的AICoopCompanion里建Runtime，将本包Runtime\Python复制进去。
+3. 用记事本打开安装后的Runtime\Python\python314._pth，内容改为下面三行，第三行填自己真实的绝对路径：
+   python314.zip
+   .
+   D:\你的游戏目录\Mods\AICoopCompanion\DeepSeekHarnessPlugin
+4. 在PowerShell执行（替换所有示例路径）：
+   powershell -NoProfile -ExecutionPolicy Bypass -File "D:\你的游戏目录\Mods\AICoopCompanion\DeepSeekHarnessPlugin\install-modern.ps1" -DshUserRoot "D:\你的DSHHome" -PythonCommand "D:\你的游戏目录\Mods\AICoopCompanion\Runtime\Python\python.exe"
+5. 必须使用install-modern.ps1，不要用旧版install.ps1。新版会同时注册独立提示词按钮。
+6. 游戏里启用独立Harmony，再启用环世界AI队友，重启。
+
+七、开始使用
+1. 启动游戏并载入存档。启动DSH，使用“环世界AI队友”模式创建/进入会话。
+2. 点击连接游戏，或对AI说“连接游戏”；不会仅因安装Mod就自动连接。
+3. API和模型只在DSH中配置。能看到AI回复不等于命令全部成功，请查看游戏日志与失败原因。
+4. 在游戏里可调整工具权限、决策间隔、思考暂停、聊天暂停、殖民者状态发送频率等。危险DLC工具默认禁用或先询问，按需决定。
+5. 会话顶部的“AI提示词（实验性）”按钮可直接输入多行要求，点击保存后在下次模型请求生效。所有环世界模式会话共用这一份，重启和新会话无需重填。其他模式没有该按钮且不使用该提示词。
+6. 游戏设置开启“学习模式”后，连接的AI每轮读取学习内容，按玩家教导记录经验；超过272KiB先由AI压缩到200KiB以内再继续，可能产生额外费用。关闭不删除原文或自定义提示词。
+7. stop/停止或断开连接可以停止自动协作。AI无法处理的步骤会请求玩家。
+
+八、升级与保留个人资料
+1. 完全退出游戏与DSH；将整个旧Mod备份到游戏目录外，不要只备份DLL。
+2. 重点保留DeepSeekHarnessPlugin\AI提示词.txt、Knowledge\学习内容.txt、自建Presets、成品布局和游戏存档。只保留你自己的内容，不要拿旧代码覆盖新插件。
+3. 移走旧Mod后安装新版，再恢复上述个人文件；遇到同名官方预设先比较，不盲目覆盖。
+4. 模组设置与攻略进度分别由游戏设置/存档管理。不要删除DSH Home；更新后重新运行安装注册步骤，重启DSH并刷新页面。
+5. 玩家包与源码包都不会包含作者个人的提示词、学习记录、API密钥或会话。
+
+九、一键卸载
+1. 先备份存档，在游戏Mod列表停用环世界AI队友，然后退出游戏与DSH。
+2. 双击02-uninstall.cmd。若install-state.json存在，会使用安装时的目录；否则要求填写游戏与Home。非web profile需用参数指定。
+3. 卸载只移除本插件的注册区块，并把游戏中的AICoopCompanion移入解压包下“卸载保留”文件夹。它是可恢复备份，确认不要后可自行删除。
+4. 不会删除DSH、模型配置、存档、Harmony或其他插件。如果曾在多个Home安装，需对每个Home分别移除注册。
+5. 旧存档可能引用本Mod的剧本/区域/数据；卸载后能否继续读取不保证，建议使用移除前的备份测试。
+
+十、手动卸载
+1. 关闭游戏与DSH，将游戏\Mods\AICoopCompanion移到游戏目录外保留。
+2. 用文本编辑器打开实际Home\profiles\web\cordis.patch.yml。
+3. 仅删除 # BEGIN rimworld-ai-coop managed preset 到 # END rimworld-ai-coop managed preset 两行之间的内容（含标记行）；其中同时包含模式与新按钮注册。
+4. 不要删除整个cordis.patch.yml，不要改其他插件或模型配置。如果只剩注释/空白，末尾保留一行 []，表示空配置列表。
+5. 重启DSH并刷新网页，不要继续使用依赖已卸载插件的会话。
+
+十一、常见问题
+看不到模式/按钮：确认Home和profile选对、使用install-modern.ps1、完整重启并刷新；新按钮按0.1.7-rc.2接口适配。
+找不到Python：确认安装后的Runtime\Python\python.exe存在、._pth第三行指向安装后的插件，不是解压包旧位置。
+提示已有Mod：按升级步骤先备份移走旧目录，不要把脚本强行改为删除整个Mods。
+能聊天但不能操作：先进入存档并手动连接，查看权限与日志；回复“已完成”不代表游戏实际完成。
+手动注册Windows路径：安装脚本会生成file:///形式，不要改回裸D盘路径。
+学习压缩失败：原文件保留；检查模型额度/输出与日志，可暂时关闭学习模式，不必删除学习内容。
+不知道目录：先停止，不要随便填写C盘根目录或用户目录；找到RimWorldWin64.exe与profiles后再继续。

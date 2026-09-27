@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-rimworld-ai-coop",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "DeepSeek Harness Cordis plugin for RimWorld AI Coop Companion",
   "type": "module",
   "main": "index.js",
@@ -9,6 +9,9 @@
   },
   "files": [
     "index.js",
+    "ai-prompts.js",
+    "PromptUI",
+    "learning.py",
     "LICENSE",
     "授权说明.txt",
     "aicoop_cli.py",
@@ -18,7 +21,8 @@
     "README.md",
     "install.ps1",
     "install-modern.ps1",
-    "新版DSH安装说明.txt"
+    "新版DSH安装说明.txt",
+    "实验性功能说明.txt"
   ],
   "keywords": [
     "deepseek-harness",

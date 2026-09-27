@@ -1,0 +1,1 @@
+TASK 05-14 按需维护皇权与文化需求。PREREQ：对应DLC启用且有相关成员，否则跳过。STEPS：1）dlc_inspect查爵位实际缺失的王座厅/卧室条件、灵能和角色资格；2）已有建筑工具补齐真实需求，dlc_assign分配空闲且原版允许的设施；3）psyfocus_target设冥想目标，C timetable安排Meditate时段，保留休息和日常工作；4）合适空闲角色经许可用ideology_role安排，仪式沿用已有工具；5）危险能力默认禁止，授勋、许可、复杂角色祭品等界面请求玩家。METHOD：dlc_inspect、psyfocus_target、dlc_assign、ideology_role和已有仪式工具。DONE：现有需求稳定，没有需求跳过。FAIL：未支持操作请求玩家，不虚构授勋或仪式完成。

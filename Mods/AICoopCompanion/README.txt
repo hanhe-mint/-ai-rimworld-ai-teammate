@@ -9,7 +9,7 @@ AI Coop Companion - RimWorld 1.6（仅外接 Agent）
 
 殖民者栏不增加玩家/AI 灰框。每个原版地图或远征分组内会自动保持玩家殖民者在前、AI 殖民者在后；招募新成员后自动重新排序。
 
-所有当前可用的 AI 游戏操作均由 DeepSeekHarnessPlugin\aicoop_tools.py 导出为独立 CLI 工具。工具名、中文说明、权限键、参数 Schema 和示例参数以 `python DeepSeekHarnessPlugin\aicoop_cli.py tools` 的输出为准；Harness Agent 使用 cli_execute.commands 提交 CLI 指令。使用 C mapID work pawnID 1,3,0,... 一次设置该 AI 殖民者的全部工作优先级；严格遵循 WORK_PRIORITY_ORDER，禁用工作填 0，按技能分工。
+所有当前可用的 AI 游戏操作均由 DeepSeekHarnessPlugin\aicoop_tools.py 导出为独立 CLI 工具。工具名、中文说明、权限键、参数 Schema 和示例参数以 `python DeepSeekHarnessPlugin\aicoop_cli.py tools` 的输出为准；Harness Agent 使用 cli_execute.commands 提交 CLI 指令。C mapID work pawnID 使用固定20项数字（第一项灭火、第二项就医，其余见WORK_PRIORITY_ORDER），不跟随工作栏排序；或提交 Firefighter=1,Patient=1 等工作DefName=数值列表，Mod新增工作使用名称设置，未指定项不变。禁用工作填0，按技能分工。
 
 AI 会按迫降快速入门流程推进：安全与威胁、房间和床、仓储与食物种植、电力和照明、工作台生产、研究、防御扩建、终局。不会更改游戏设置，也不会暂停或调整游戏速度。树木使用伐木操作，非树植物才使用割除操作，成熟作物使用收获操作。
 `build_room` 可一次放置矩形墙体和门蓝图；`build` 可放置床、照明、发电机、电池、电线、工作台等已解锁建筑；所有建筑仍消耗原版材料并由殖民者正常施工。

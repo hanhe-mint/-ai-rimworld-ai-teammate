@@ -1,6 +1,6 @@
 # 作息、方案、活动区与基地维护关联链
 
-作息：只在不改变工作优先级的前提下使用 `timetable_all` 或 `timetable_hours` 安排睡眠、娱乐、工作和自由时间。先读取殖民者昼夜特性、伤病和当前安排；批量设置后再检查是否覆盖错误时段。
+作息：使用 `timetable_all` 或 `timetable_hours` 设置作息，工作优先级则使用固定工作名称映射的 `work_priorities`，两者不是同一个工具。先读取殖民者状态，批量设置后再检查结果。
 
 医疗与自理：用 `medical_care` 设置允许药物级别；`self_tend` 只给有足够 Medicine、当前确有必要且没有更合适医生的人开启。敌人反应使用 `hostility_response`，但袭击当下仍由征召战斗链负责。
 
