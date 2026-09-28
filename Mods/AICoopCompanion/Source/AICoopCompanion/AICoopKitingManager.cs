@@ -52,6 +52,8 @@ namespace AICoopCompanion
             public IntVec3 StrategicDestination;
             public bool HasStrategicDestination;
             public bool ProjectileDodgeMove;
+            public readonly Queue<IntVec3> RefugeRoute = new Queue<IntVec3>();
+            public int NextRefugeSearchTick;
         }
 
         private static readonly Dictionary<int, bool> PreviousDrafted = new Dictionary<int, bool>();
@@ -160,7 +162,7 @@ namespace AICoopCompanion
             Active[id] = new KitingState { NextOrbitTick = tick };
             AICoopGameComponent component = AICoopGameComponent.Current;
             if (component != null && HasRangedWeapon(pawn)) component.AddLog("[自动溜怪] " + pawn.LabelShort + " 已启动。");
-            if (pawn.Map != null && pawn.Spawned && HasRangedWeapon(pawn)) UpdatePawn(pawn, Active[id], tick);
+            if (pawn.Map != null && pawn.Spawned) UpdatePawn(pawn, Active[id], tick);
         }
 
         public static void Tick()
@@ -247,7 +249,8 @@ namespace AICoopCompanion
                 List<Pawn> enemies = map.mapPawns.AllPawnsSpawned.Where(IsHostileTarget).ToList();
                 bool highThreat = enemies.Count >= ManualTurretEnemyThreshold && IsHighRaidThreat(map, tick);
                 List<Pawn> aiPawns = map.mapPawns.FreeColonistsSpawned
-                    .Where(pawn => pawn != null && component.CanAIControl(pawn) && pawn.Drafted && !pawn.Downed && pawn.jobs != null)
+                    .Where(pawn => pawn != null && component.CanAIControl(pawn) && AIDrafted.Contains(pawn.thingIDNumber) &&
+                        (HasRangedWeapon(pawn) || HasMeleeWeapon(pawn)) && pawn.Drafted && !pawn.Downed && pawn.jobs != null)
                     .ToList();
                 if (highThreat)
                 {
@@ -902,10 +905,98 @@ namespace AICoopCompanion
             return radiusScore + cover * 18f + obstacle * 8f + anchor - pawn.Position.DistanceToSquared(cell) * 0.01f;
         }
 
+        private static void UpdateUnarmedPawn(Pawn pawn, KitingState state, int tick)
+        {
+            Map map = pawn.Map;
+            List<Pawn> enemies = map.mapPawns.AllPawnsSpawned.Where(IsHostileTarget).ToList();
+            float[] ranges = enemies.Select(enemy => Math.Max(8f, EnemyAttackRange(enemy, pawn) + 3f)).ToArray();
+            var risks = new Dictionary<IntVec3, float>();
+            Func<IntVec3, float> risk = cell =>
+            {
+                float cached;
+                if (risks.TryGetValue(cell, out cached)) return cached;
+                float value = cell.GetThingList(map).Any(thing => thing is Fire) ? 1000f : 0f;
+                for (int i = 0; i < enemies.Count; i++)
+                {
+                    float distance = cell.DistanceTo(enemies[i].Position);
+                    if (distance < ranges[i] && (distance < 3f || GenSight.LineOfSight(enemies[i].Position, cell, map)))
+                        value = Math.Max(value, ranges[i] - distance + 1f);
+                }
+                risks[cell] = value;
+                return value;
+            };
+            Func<IntVec3, bool> walkable = cell =>
+            {
+                if (!cell.InBounds(map) || !cell.Walkable(map) || !AICoopCombatArea.Allows(pawn, cell)) return false;
+                Building_Door door = cell.GetEdifice(map) as Building_Door;
+                return (door == null || door.FreePassage || door.PawnCanOpen(pawn)) &&
+                    !cell.GetThingList(map).Any(thing => thing is Pawn && thing != pawn);
+            };
+            while (state.RefugeRoute.Count > 0 && state.RefugeRoute.Peek() == pawn.Position) state.RefugeRoute.Dequeue();
+            float currentRisk = risk(pawn.Position);
+            if (state.RefugeRoute.Count > 0)
+            {
+                IntVec3 next = state.RefugeRoute.Peek();
+                // Follow the checked route one cardinal step at a time; a direct Goto to
+                // its endpoint could take a shorter route straight through enemies.
+                if (!walkable(next) || next.DistanceToSquared(pawn.Position) > 1 || risk(next) > currentRisk + 0.01f)
+                {
+                    state.RefugeRoute.Clear();
+                    state.NextRefugeSearchTick = tick;
+                }
+            }
+            if (state.RefugeRoute.Count == 0 && (tick >= state.NextRefugeSearchTick || currentRisk > 0f))
+            {
+                Area home = map.areaManager.Home;
+                List<IntVec3> homeCells = home.ActiveCells.ToList();
+                IntVec3 center = homeCells.Count == 0 ? pawn.Position : new IntVec3(
+                    (homeCells.Min(cell => cell.x) + homeCells.Max(cell => cell.x)) / 2, 0,
+                    (homeCells.Min(cell => cell.z) + homeCells.Max(cell => cell.z)) / 2);
+                var previous = new Dictionary<IntVec3, IntVec3> { [pawn.Position] = pawn.Position };
+                var pending = new Queue<IntVec3>();
+                pending.Enqueue(pawn.Position);
+                IntVec3 best = pawn.Position;
+                float bestScore = float.MaxValue;
+                while (pending.Count > 0)
+                {
+                    IntVec3 cell = pending.Dequeue();
+                    float cellRisk = risk(cell);
+                    // Safety takes precedence over home and centrality. Never choose
+                    // the geometric center blindly (it may be a wall, fire or enemy).
+                    float score = cellRisk * 1000000f + (homeCells.Count > 0 && !home[cell] ? 100000f : 0f) + cell.DistanceToSquared(center);
+                    if (score < bestScore) { bestScore = score; best = cell; }
+                    if (previous.Count >= 4096) continue;
+                    foreach (IntVec3 direction in GenAdj.CardinalDirections)
+                    {
+                        IntVec3 next = cell + direction;
+                        if (previous.ContainsKey(next) || !walkable(next) || risk(next) > cellRisk + 0.01f) continue;
+                        previous[next] = cell;
+                        pending.Enqueue(next);
+                    }
+                }
+                var route = new Stack<IntVec3>();
+                for (IntVec3 cell = best; cell != pawn.Position; cell = previous[cell]) route.Push(cell);
+                foreach (IntVec3 cell in route) state.RefugeRoute.Enqueue(cell);
+                state.NextRefugeSearchTick = tick + 180;
+            }
+            state.HasStrategicDestination = false;
+            state.ProjectileDodgeMove = false;
+            if (state.RefugeRoute.Count > 0)
+            {
+                IssueMove(pawn, state.RefugeRoute.Peek(), state, tick);
+                return;
+            }
+            state.HasDestination = false;
+            // Plain Wait does not initiate attacks like a combat wait can.
+            if (pawn.CurJob == null || pawn.CurJob.def != JobDefOf.Wait)
+                pawn.jobs.TryTakeOrderedJob(JobMaker.MakeJob(JobDefOf.Wait, 180));
+        }
+
         private static void UpdatePawn(Pawn pawn, KitingState state, int tick)
         {
-            if (pawn == null || pawn.Downed || pawn.InMentalState || pawn.jobs == null || pawn.equipment == null || pawn.equipment.Primary == null) return;
-            if (pawn.CurJob != null && pawn.CurJob.def == JobDefOf.ManTurret) return;
+            if (pawn == null || pawn.Downed || pawn.InMentalState || pawn.jobs == null) return;
+            bool unarmed = !HasRangedWeapon(pawn) && !HasMeleeWeapon(pawn);
+            if (!unarmed && pawn.CurJob != null && pawn.CurJob.def == JobDefOf.ManTurret) return;
             bool residenceRestricted = IsResidenceRestricted(pawn);
 
             if (state.HasDestination && pawn.Position == state.Destination && pawn.CurJob == null)
@@ -929,6 +1020,12 @@ namespace AICoopCompanion
                 }
                 IntVec3 escape = FindProjectileEscapeFromProjectiles(pawn, projectile, state);
                 if (escape.IsValid && escape != pawn.Position) IssueProjectileDodgeMove(pawn, escape, state, tick);
+                return;
+            }
+
+            if (unarmed)
+            {
+                UpdateUnarmedPawn(pawn, state, tick);
                 return;
             }
 

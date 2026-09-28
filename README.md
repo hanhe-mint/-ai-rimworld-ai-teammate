@@ -10,7 +10,7 @@
 
 ## 下载与使用
 
-普通玩家请下载 [v0.4.0 Release 的玩家版 ZIP](https://github.com/hanhe-mint/-ai-rimworld-ai-teammate/releases/tag/v0.4.0)，完整解压后阅读包内《使用说明/安装与使用教程.txt》。包含安装、卸载脚本，官方 DSH 和 dsh-launcher 两种安装教程；不包含 DSH 本体。
+普通玩家请下载 [v0.4.1 Release 的玩家版 ZIP](https://github.com/hanhe-mint/-ai-rimworld-ai-teammate/releases/tag/v0.4.1)，完整解压后阅读包内《使用说明/安装与使用教程.txt》。包含安装、卸载脚本，官方 DSH 和 dsh-launcher 两种安装教程；不包含 DSH 本体。
 
 ## 玩家交流论坛
 
@@ -37,7 +37,7 @@
 | `Mods/AICoopCompanion/Textures` | Mod 图标及纹理资源。 |
 | `Mods/AICoopCompanion/Development/Distribution` | 发布用安装、卸载脚本及说明源文件。 |
 | `Mods/AICoopCompanion/DeepSeekHarnessPlugin/PromptUI` | 实验性AI提示词编辑按钮与界面。 |
-| `Mods/AICoopCompanion/Tools` | 房间预设和成品布局导出工具及源码。 |
+| `Tools` | 独立的房间预设和成品布局导出工具及源码，玩家包中与安装、卸载脚本并列，不复制进Mod。 |
 | `Mods/AICoopCompanion/成品` | 玩家自定义成品布局的说明与示例。 |
 
 ## 源码构建
@@ -46,7 +46,7 @@
 
 游戏 DLL、DSH 程序、个人配置、API 密钥及存档不随源码上传。修改 C# 后需重新编译并重启游戏；修改插件后需重启 DSH。
 
-查看 [0.4.0 开发日志](使用说明/开发日志.txt)。
+查看 [0.4.1 开发日志](使用说明/开发日志.txt)。
 
 ## 开源协议
 

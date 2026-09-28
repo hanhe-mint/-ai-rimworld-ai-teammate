@@ -89,10 +89,6 @@ namespace AICoopCompanion
                 case "NOTE_DONE":
                     return "标记待办 #" + Part(parts, 1) + " 已完成。";
                 case "PRESET":
-                    if (Part(parts, 1).IndexOf("defense_gate_battery", StringComparison.OrdinalIgnoreCase) >= 0)
-                        return "激活大门防御预设，并把中间墙/门自动对齐到左右两个外围墙开口之一；必要时扩建外围墙。";
-                    if (Part(parts, 1).IndexOf("defense_active_turrets", StringComparison.OrdinalIgnoreCase) >= 0)
-                        return "在墙内放置主动炮台远程防御预设，与其他建筑保持至少两格间距。";
                     return "激活并自动建设殖民地预设“" + Part(parts, 1) + "”。";
                 case "PRESET_DONE":
                     return "标记预设房间“" + Part(parts, 1) + "”已完成。";

@@ -207,7 +207,7 @@ TOOLS: list[dict[str, Any]] = [
          {"map_id": 0, "x1": 100, "z1": 100, "x2": 110, "z2": 110}),
     tool("guide_done", "progress", "将当前攻略任务标记为完成。", "none", ["GUIDE_DONE", "${task_id}"],
          [argument("task_id", "string", "当前攻略任务编号。")], {"task_id": "01.03"}),
-    tool("preset_build", "building", "放置一个房间。先让13x13房间边线对齐紧贴共墙，再检查门；不能为对门错位。坐标作为拼接优先位置，以返回origin为准。原位旋转或强制拼接须玩家确认；WAIT时等待，不重复调用。防御预设保留独立规则。", "PRESET",
+    tool("preset_build", "building", "放置一个房间。先让13x13房间边线对齐紧贴共墙，再检查门；不能为对门错位。坐标作为拼接优先位置，以返回origin为准。原位旋转或强制拼接须玩家确认；WAIT时等待，不重复调用。", "PRESET",
          ["PRESET", "${preset}", "${map_id}", "${x}", "${z}", "${rotation}"],
          [argument("preset", "string", "预设目录中真实的中文文件名，可省略.txt；先列出目录，不要编造文件名。"),
           argument("map_id", "integer", "可选地图 ID。", required=False),

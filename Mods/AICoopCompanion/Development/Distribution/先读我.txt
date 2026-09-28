@@ -1,4 +1,4 @@
-环世界AI队友 0.4.0
+环世界AI队友 0.4.1
 必须使用DeepSeek Harness 0.1.7及以上；新提示词界面按0.1.7-rc.2适配。
 请先完整解压到游戏Mod目录以外的位置，再阅读“使用说明/安装与使用教程.txt”。
 01-install.cmd：一键安装；02-uninstall.cmd：可恢复卸载。
@@ -6,4 +6,5 @@
 需要自行安装Harness并配置模型/API，本包不包含Harness或Node。
 OptionalMods/Harmony是可选独立Mod；已有适配1.6的Harmony不要重复安装。
 Mod：游戏模组与插件；Runtime/Python：CLI独立运行环境。
+Tools：预设导出工具，与安装、卸载脚本并列，不要复制进Mod。双击Tools/预设导出.exe使用。
 学习模式与自定义提示词为实验性功能。AI可能犯错，建议备份存档。

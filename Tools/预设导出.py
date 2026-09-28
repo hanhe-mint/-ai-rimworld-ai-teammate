@@ -6,15 +6,38 @@
 """
 import argparse
 import io
+import json
 import re
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
-if getattr(sys, 'frozen', False):  # PyInstaller 冻结后 __file__ 在临时解包目录，只能从 exe 位置推 MOD_DIR
-    MOD_DIR = Path(sys.executable).resolve().parent.parent
-else:
-    MOD_DIR = Path(__file__).resolve().parent.parent  # 本文件位于 <mod>/Tools
+TOOL_DIR = Path(sys.executable if getattr(sys, 'frozen', False) else __file__).resolve().parent
+
+
+def valid_mod(path):
+    try:
+        return ET.parse(path / 'About' / 'About.xml').getroot().findtext('packageId') == 'local.aicoopcompanion'
+    except (OSError, ET.ParseError):
+        return False
+
+
+def find_mod():
+    try:
+        state = json.loads((TOOL_DIR.parent / 'install-state.json').read_text(encoding='utf-8-sig'))
+        installed = Path(state['gamePath']) / 'Mods' / 'AICoopCompanion'
+        if valid_mod(installed):
+            return installed
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    # Also support the development checkout and the old tool location.
+    for candidate in (TOOL_DIR.parent / 'Mods' / 'AICoopCompanion', TOOL_DIR.parent):
+        if valid_mod(candidate):
+            return candidate
+    return None
+
+
+MOD_DIR = find_mod()
 AREA_CLASS = 'Area_AICoopPreset'
 BAD_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f\s]')
 RESERVED = {'CON', 'PRN', 'AUX', 'NUL', *(f'COM{i}' for i in range(1, 10)), *(f'LPT{i}' for i in range(1, 10))}
@@ -172,6 +195,7 @@ def launch_gui() -> int:
         def __init__(self, master):
             self.master = master
             self.save = None
+            self.mod_dir = MOD_DIR
             master.title('环世界 AI 队友：预设导出')
             master.geometry('680x440')
             master.minsize(560, 360)
@@ -188,8 +212,12 @@ def launch_gui() -> int:
             tkinter.Label(master, text='日志（只读；进度、警告和错误都显示在这里）：', anchor='w').grid(
                 row=2, column=0, columnspan=4, sticky='we', padx=10, pady=(10, 2))
             self.log = scrolledtext.ScrolledText(master, height=16, wrap='word', state='disabled')
-            self.log.grid(row=3, column=0, columnspan=4, sticky='nsew', padx=10, pady=(0, 10))
-            master.grid_rowconfigure(3, weight=1)
+            self.mod_label = tkinter.Label(master, text='Mod：' + str(self.mod_dir or '未选择'), anchor='w')
+            self.mod_label.grid(row=3, column=0, columnspan=3, sticky='we', padx=10)
+            self.mod_button = tkinter.Button(master, text='选择Mod目录', command=self.pick_mod)
+            self.mod_button.grid(row=3, column=3, padx=10)
+            self.log.grid(row=4, column=0, columnspan=4, sticky='nsew', padx=10, pady=(0, 10))
+            master.grid_rowconfigure(4, weight=1)
             self.write('只读取存档；同名输出不会覆盖，会自动加序号。请先选择 .rws 再点导出。')
 
         def write(self, text: str):
@@ -203,10 +231,21 @@ def launch_gui() -> int:
 
         def busy(self, active: bool):
             state = 'disabled' if active else 'normal'
-            for button in (self.pick_button, self.rooms_button, self.layout_button):
+            for button in (self.pick_button, self.rooms_button, self.layout_button, self.mod_button):
                 button.configure(state=state)
             self.master.configure(cursor='watch' if active else '')
             self.master.update_idletasks()
+
+        def pick_mod(self):
+            picked = filedialog.askdirectory(title='选择游戏中已安装的 Mods/AICoopCompanion 文件夹')
+            if not picked:
+                return
+            directory = Path(picked)
+            if not valid_mod(directory):
+                messagebox.showwarning('目录不正确', '请选择包含 About/About.xml 的环世界AI队友 Mod 文件夹。')
+                return
+            self.mod_dir = directory
+            self.mod_label.configure(text='Mod：' + str(directory))
 
         def pick_save(self):
             start = Path.home() / 'AppData/LocalLow/Ludeon Studios/RimWorld by Ludeon Studios/Saves'
@@ -218,6 +257,10 @@ def launch_gui() -> int:
                 self.write('已选择存档：' + picked)
 
         def export(self, mode: str):
+            if self.mod_dir is None:
+                self.pick_mod()
+                if self.mod_dir is None:
+                    return
             if not self.save:
                 messagebox.showwarning('还没有选择存档', '请先点“选择存档（.rws）”选中一个 .rws 文件。')
                 return
@@ -240,7 +283,7 @@ def launch_gui() -> int:
                         self.write('已取消：没有选择地图，未写入任何文件。')
                         return
                     self.write('使用地图 ID：' + str(map_id))
-            directory = MOD_DIR / ('Presets' if mode == 'rooms' else '成品')
+            directory = self.mod_dir / ('Presets' if mode == 'rooms' else '成品')
             self.write(('导出房间预设 → ' if mode == 'rooms' else '导出成品布局 → ') + str(directory))
             captured, original = io.StringIO(), sys.stdout
             sys.stdout = captured
@@ -284,6 +327,7 @@ def main() -> int:
     parser.add_argument('--save', help='存档 .rws 的完整路径；不填则弹出文件选择窗口')
     parser.add_argument('--mode', choices=['rooms', 'layout'], help='rooms=命名范围导出房间预设；layout=放置记录导出成品布局')
     parser.add_argument('--out', type=Path, help='输出目录；默认分别是 Mod/Presets 与 Mod/成品')
+    parser.add_argument('--mod', type=Path, help='已安装的 AICoopCompanion Mod 目录')
     parser.add_argument('--map', dest='map_id', type=int, help='只导出该地图 ID（uniqueID）的记录')
     parser.add_argument('--origin', type=int, default=1, help='成品布局的原点记录序号，从 1 开始；默认第 1 条')
     args = parser.parse_args()
@@ -295,6 +339,9 @@ def main() -> int:
             print('可改用命令行参数导出，例如：预设导出.exe --mode rooms --save "存档路径.rws"', file=sys.stderr)
             return 1
     try:
+        mod_dir = args.mod or MOD_DIR
+        if not args.out and (mod_dir is None or not valid_mod(mod_dir)):
+            raise ValueError('请用 --mod 指定已安装的Mod目录，或用 --out 指定输出目录。')
         save = args.save or choose_save()
         if not save:
             print('没有选择存档，未写入任何文件。')
@@ -308,9 +355,9 @@ def main() -> int:
             if mode is None:
                 raise ValueError('请输入 1 或 2。')
         if mode == 'rooms':
-            export_rooms(root, args.out or MOD_DIR / 'Presets', args.map_id)
+            export_rooms(root, args.out or mod_dir / 'Presets', args.map_id)
         else:
-            export_layout(root, args.out or MOD_DIR / '成品', save_path.stem, args.map_id, args.origin)
+            export_layout(root, args.out or mod_dir / '成品', save_path.stem, args.map_id, args.origin)
         return 0
     except (ValueError, OSError, EOFError, ET.ParseError) as error:
         print('导出失败：' + str(error), file=sys.stderr)
