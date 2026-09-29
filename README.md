@@ -2,7 +2,7 @@
 
 作者：寒荷mint
 
-**必须使用 DeepSeek Harness（DSH）0.1.7 及以上版本；适用于 Windows 上的 RimWorld 1.6。** 独立提示词界面按 0.1.7-rc.2 接口适配，其他版本尚未逐一验证。DSH 需要自行安装，模型和 API 在 DSH 中配置；Harmony 作为独立前置模组启用，不要重复安装。
+**必须使用 DeepSeek Harness（DSH）0.2.0 系列及以上，不再支持 0.1.x；适用于 Windows 上的 RimWorld 1.6。** 本次验证版本为 0.2.0-rc.2，支持游戏所在 Windows 电脑上的网页端与官方桌面版。未来接口变更仍可能需要适配。DSH 需要自行安装，模型和 API 在 DSH 中配置；Harmony 作为独立前置模组启用，不要重复安装。
 
 接入deepseek harness，让deepseek加入你的殖民地，和你一起在环世界生存。 你和AI分别管理自己的殖民者，也可以开启共享控制。AI直接读取游戏数据，安排种植、采集、建造、生产、研究和战斗。你可以在游戏或Harness内和它聊天、提出需求，或回应它的求助。 支持房间预设、分阶段攻略、工具权限管理、决策间隔调整和思考时暂停。攻略进度及相关记录随存档保存。
 
@@ -10,7 +10,7 @@
 
 ## 下载与使用
 
-普通玩家请下载 [v0.4.1 Release 的玩家版 ZIP](https://github.com/hanhe-mint/-ai-rimworld-ai-teammate/releases/tag/v0.4.1)，完整解压后阅读包内《使用说明/安装与使用教程.txt》。包含安装、卸载脚本，官方 DSH 和 dsh-launcher 两种安装教程；不包含 DSH 本体。
+普通玩家请下载 [v0.4.2 Release 的玩家版 ZIP](https://github.com/hanhe-mint/-ai-rimworld-ai-teammate/releases/tag/v0.4.2)，完整解压后阅读包内《使用说明/安装与使用教程.txt》。包含安装、卸载脚本，以及官方网页端、官方桌面版与 dsh-launcher 安装教程；不包含 DSH 本体。
 
 ## 玩家交流论坛
 
@@ -46,7 +46,7 @@
 
 游戏 DLL、DSH 程序、个人配置、API 密钥及存档不随源码上传。修改 C# 后需重新编译并重启游戏；修改插件后需重启 DSH。
 
-查看 [0.4.1 开发日志](使用说明/开发日志.txt)。
+查看 [0.4.2 开发日志](使用说明/开发日志.txt)。
 
 ## 开源协议
 

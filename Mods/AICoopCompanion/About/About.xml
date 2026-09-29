@@ -17,7 +17,7 @@
   <loadAfter>
     <li>brrainz.harmony</li>
   </loadAfter>
-  <description>版本：0.4.1
+  <description>版本：0.4.2
 
 接入deepseek harness，让deepseek加入你的殖民地，和你一起在环世界生存。
 
@@ -25,7 +25,7 @@
 
 支持房间预设、分阶段攻略、工具权限管理、决策间隔调整和思考时暂停。攻略进度及相关记录随存档保存。
 
-使用要求：适用于环世界 1.6，需要本机运行 DeepSeek Harness 并加载附带插件；模型与 API 在 Harness 中配置。
+使用要求：适用于环世界 1.6，需要本机Windows运行 DeepSeek Harness 0.2.0系列及以上（当前验证基线0.2.0-rc.2，支持官方桌面版与网页端）并加载附带插件；模型与 API 在 Harness 中配置。不再支持0.1.x。
 
 注意：这不是真人联机模组。AI 可能判断失误或操作失败，不能保证自动通关。部分 DLC 功能尚未支持，其他 Mod 的兼容性需要测试。建议备份存档；模型服务可能产生费用。</description>
 </ModMetaData>

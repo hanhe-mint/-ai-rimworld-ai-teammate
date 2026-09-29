@@ -15,12 +15,12 @@
 在 PowerShell 中执行：
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install-modern.ps1 -DshUserRoot "实际DSH Home目录" -Profile desktop -PythonCommand "实际python.exe路径"
 ```
 
-安装脚本在实际 DeepSeek Harness 用户目录下创建 `.agent-presets\rimworld`，通过绝对路径引用本插件。默认读取 `DSH_HOME`，未设置时读取启动器配置中的唯一有效用户目录，不再使用旧桌面版目录。存在多个目录或独立 CLI 安装时，使用 `-DshUserRoot '实际用户目录'` 明确指定。安装不会修改 Harness 核心。
+仅支持 DSH 0.2.0 系列及以上，当前验证基线为官方最新 0.2.0-rc.2，不再适配0.1.x。安装脚本在指定Home的 `profiles/<profile>/cordis.patch.yml` 注册插件；官方桌面版使用 `desktop`，网页端通常使用 `web`。未指定时仅自动选取唯一已初始化配置。旧名称install.ps1转交同一安装器，不再创建.agent-presets。安装不会修改Harness核心。
 
-支持同一台 Windows 电脑上运行的 DSH CLI 或启动器 Web 界面；实际连接由本机 DSH 的 Python 子进程完成，浏览器只是界面。远程服务器、WSL 和容器中的 DSH 不能直接访问此 Windows 命名管道。Python 可用 `-PythonCommand` 指定；插件脚本和游戏资料均相对插件自身目录定位。
+支持同一台Windows电脑上的官方桌面版及网页端；实际连接由本机DSH的Python子进程完成，两种界面使用同一套插件。远程服务器、WSL和容器中的DSH不能直接访问游戏的Windows命名管道。Python可用 `-PythonCommand` 指定；插件脚本和游戏资料均相对插件目录定位。具体步骤见《新版DSH安装说明.txt》。
 
 ## 开启与关闭
 

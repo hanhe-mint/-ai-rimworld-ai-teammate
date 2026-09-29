@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { promptStore, learningStates, LEARNING_PROMPT } from "../ai-prompts.js";
 
 export const name = "rimworld-prompt-ui";
-export const inject = ["connection", "sessions"];
+export const inject = ["connection", "sessions", "webServer"];
 
 export function isRimworldSession(session) {
   if (!session) return false;
@@ -15,7 +15,7 @@ export function isRimworldSession(session) {
 
 export function apply(ctx) {
   const store = promptStore(resolve(dirname(fileURLToPath(import.meta.url)), ".."));
-  ctx.effect(() => ctx.connection.rpc.handle("/rimworld-prompts", async (operation, payload) => {
+  ctx.inject(["connection", "webServer", "sessions"], scoped => scoped.connection.rpc.handle("/rimworld-prompts", async (operation, payload) => {
     try {
       if (!payload || typeof payload.sessionId !== "string" || !isRimworldSession(ctx.sessions.get(payload.sessionId)))
         return { ok: false, error: { code: "forbidden", message: "仅环世界AI队友模式可以编辑此配置。" } };
@@ -26,5 +26,5 @@ export function apply(ctx) {
     } catch (error) {
       return { ok: false, error: { code: "invalid_request", message: error.message } };
     }
-  }), "rimworld prompt editor RPC");
+  }));
 }

@@ -238,6 +238,9 @@ function outputDefinition(rawName) {
 
 export async function apply(ctx, config = {}) {
   if (config.enabled === false) return;
+  if (typeof ctx.systemPrompt?.section !== "function" || typeof ctx.systemPrompt?.suppressRuntimeContext !== "function" ||
+      typeof ctx.tools?.register !== "function" || typeof ctx.commands?.register !== "function" || typeof ctx.agents?.get !== "function")
+    throw new Error("环世界AI队友需要 DSH 0.2.0 系列或更新版本的完整 Agent 接口，请更新 Harness（当前验证版本 0.2.0-rc.2）。");
   const promptPath = resolve(config.promptPath || resolve(PLUGIN_DIR, "rimworld_harness_prompt.txt"));
   const serverPath = resolve(config.mcpServerPath || resolve(PLUGIN_DIR, "aicoop_mcp.py"));
   const pythonCommand = config.pythonCommand || "python";

@@ -1,0 +1,7 @@
+本目录保存开发所需依赖及旧预设导出辅助脚本，不属于游戏本体。
+Mod源码：../Source/AICoopCompanion
+编译入口：../Source/AICoopCompanion/build.ps1
+默认从Mod所在的游戏目录读取游戏程序集，也可传入-GamePath指定游戏根目录。
+输出：../Assemblies/AICoopCompanion.dll
+packages保留编译器、Harmony编译引用与反编译检查工具。重复下载包、旧探针和测试产物已清理。
+玩家预设导出工具仍在../Tools，不受本次目录整理影响。

@@ -1,4 +1,4 @@
-环世界AI队友 0.4.1 源码说明
+环世界AI队友 0.4.2 源码说明
 
 目录作用
 Mods/AICoopCompanion：完整Mod、资源与插件。
@@ -26,5 +26,5 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ".\Mods\AICoopCompanion\Sour
 4. 安装GitHub Desktop并登录，选择File → Clone repository → URL，填写仓库网址，选一个空的本地目录。
 5. 将这份源码目录内的内容复制进克隆目录，保留克隆目录原有.git。不要直接删除远端原文件；本次源码布局有变化，确认旧Source/packages等已被新布局替代后再在克隆目录删除旧副本。
 6. 在Changes检查没有API密钥、个人提示词、学习记录、存档和聊天记录；填写说明，点Commit to main，再点Push origin。
-7. 玩家ZIP另在GitHub Releases中创建版本v0.4.1，粘贴开发日志，上传玩家ZIP；源码不必另压缩上传。
+7. 玩家ZIP另在GitHub Releases中创建版本v0.4.2，粘贴开发日志，上传玩家ZIP；源码不必另压缩上传。
 8. 本项目沿用GPL-3.0协议；第三方组件按其各自许可分发，保留许可文件。不要上传游戏本体或游戏程序集。

@@ -1,16 +1,21 @@
-﻿param([string]$GamePath, [string]$DshHome, [string]$Profile = 'web')
+﻿param([string]$GamePath, [string]$DshHome, [string]$Profile)
 $ErrorActionPreference = 'Stop'
 try {
     $statePath = Join-Path $PSScriptRoot 'install-state.json'
     if (Test-Path -LiteralPath $statePath) {
         $state = Get-Content -LiteralPath $statePath -Raw -Encoding UTF8 | ConvertFrom-Json
         if (!$GamePath) { $GamePath = $state.gamePath }
-        if (!$DshHome) { $DshHome = $state.dshHome; $Profile = $state.profile }
+        if (!$DshHome) { $DshHome = $state.dshHome; if (!$Profile) { $Profile = $state.profile } }
     }
     if (!$GamePath) { $GamePath = Read-Host '游戏目录' }
     if (!$DshHome) { $DshHome = Read-Host '安装插件时使用的DSH Home目录' }
     $GamePath = (Resolve-Path -LiteralPath $GamePath.Trim().Trim('"')).Path
     $DshHome = (Resolve-Path -LiteralPath $DshHome.Trim().Trim('"')).Path
+    if (!$Profile) {
+        $profiles = @(Get-ChildItem -LiteralPath (Join-Path $DshHome 'profiles') -Directory | Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'package.json') } | Select-Object -ExpandProperty Name)
+        if ($profiles.Count -eq 1) { $Profile = $profiles[0] }
+        else { $Profile = Read-Host ('请选择要卸载的配置（web/desktop）：' + ($profiles -join ', ')) }
+    }
     if (!(Test-Path -LiteralPath (Join-Path $GamePath 'RimWorldWin64.exe')) -or $Profile -notmatch '^[a-zA-Z0-9_-]+$') { throw '目录或Profile不正确。' }
     if (Get-Process RimWorldWin64 -ErrorAction SilentlyContinue) { throw '请先退出游戏，并完全退出DSH。' }
     $target = [IO.Path]::GetFullPath((Join-Path $GamePath 'Mods\AICoopCompanion'))

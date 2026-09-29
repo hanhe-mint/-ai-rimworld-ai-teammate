@@ -1,19 +1,23 @@
-DSH 0.1.7-alpha.1 新版预设注册
+DSH 0.2.0 系列及以上安装说明
 
-已核对0.1.7-alpha.1：不再扫描旧.agent-presets目录。旧版install.ps1只供旧DSH使用。
-新版应运行同目录install-modern.ps1；不修改DSH核心，只在指定Home的profiles/web/cordis.patch.yml添加一个标记区块。
+当前官方桌面版与npm最新版本均为0.2.0-rc.2；插件以该版本为最低兼容基线，兼容0.2.0正式版及后续版本的声明不代表未来接口变化已提前验证。不再支持0.1.x，请勿用版本豁免强行加载旧版。
+支持同一台Windows电脑上的官方桌面版、官方网页端（本机启动的DSH web）及使用同版本运行时的启动器。浏览器所在位置不决定连接能力，运行DSH服务的电脑必须能访问游戏的Windows命名管道；远程服务器、WSL/容器不在本插件支持范围。
 
-关闭DSH后，在PowerShell运行（替换所有示例路径）：
-powershell -NoProfile -ExecutionPolicy Bypass -File "D:\Games\RimWorld\Mods\AICoopCompanion\DeepSeekHarnessPlugin\install-modern.ps1" -DshUserRoot "D:\MyDSHHome" -PythonCommand "C:\Python314\python.exe"
+1. 先安装DSH并启动一次，再完全退出后安装插件。
+2. 确认实际Home：以DSH_HOME或启动配置为准；官方桌面版默认通常为用户目录下的.dsh。不要填写软件的resources或node_modules目录，也不要把Home名称当成版本号。
+3. 官方桌面版使用profiles/desktop；网页端通常使用profiles/web。启动器可能设置自定义Home和profile，以实际启动配置为准。
+4. 使用PowerShell（自行替换路径）：
+网页端：powershell -NoProfile -ExecutionPolicy Bypass -File ".\install-modern.ps1" -DshUserRoot "C:\Users\你的用户名\.dsh" -Profile web -PythonCommand "C:\Python314\python.exe"
+官方桌面版：将上一行的 -Profile web 改为 -Profile desktop，其余不变。
+使用玩家包自带Python时，填写安装后的Mod/Runtime/Python/python.exe，并保证python314._pth包含插件目录。
+不填写Profile时，仅在Home内只有一个已初始化profile时自动选择；多个profile必须明确指定，避免装到另一个端。
+旧名称install.ps1现在也转交同一安装器，不再写入.agent-presets。
+5. 注册只修改对应profiles/<profile>/cordis.patch.yml中的环世界标记块，不修改DSH核心或其他插件；file:///路径同时用于模式和提示词按钮。两种端分别安装到各自使用的profile，不共用会话或自动抢占连接。
+6. 重启DSH，网页端刷新页面，选择“环世界 AI 队友”新建会话，再点击连接命令或发送“连接游戏”。模型/API继续在DSH中配置。
 
-如使用附带嵌入式Python，PythonCommand填玩家版Runtime\Python\python.exe，并先按原手动教程配置python314._pth的插件目录。
-默认Profile为web；其他profile可用-Profile指定，必须先启动过该profile。
-安装后重启DSH，或在启用了live reload的版本刷新网页，再用“环世界 AI 队友”预设新建会话。旧会话不自动换预设。
-原模型、其他预设配置不会被覆盖。重复运行只更新本插件标记区块。
-
-新版卸载：退出DSH，仅从对应profile的cordis.patch.yml中删除以下两个标记及它们之间的完整区块：
+卸载：退出DSH，在安装所选profile的cordis.patch.yml中，仅删除下面两个标记及中间内容；不要删整个配置文件。
 # BEGIN rimworld-ai-coop managed preset
 # END rimworld-ai-coop managed preset
-不要删整个cordis.patch.yml，否则会丢失个人模型和界面设置。
-旧版02-卸载脚本只处理.agent-presets下的预设，不能移除新版注册；新版注册请先按上述步骤移除。
-本说明对应已检查的0.1.7-alpha.1，不保证所有未来版本接口不变。
+同时使用网页和桌面两个profile时，要分别移除注册。
+
+已验证0.2.0-rc.2真实运行时启动、预设挂载、Python MCP与工具/提示词/命令注册；完整游戏实机联调需游戏已启动并手动连接，未承诺未来所有版本自动兼容。

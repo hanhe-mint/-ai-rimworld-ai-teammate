@@ -1,10 +1,15 @@
-﻿param([string]$GamePath, [string]$DshHome, [string]$Profile = 'web')
+﻿param([string]$GamePath, [string]$DshHome, [string]$Profile)
 $ErrorActionPreference = 'Stop'
 try {
     if (!$GamePath) { $GamePath = Read-Host '游戏目录（包含RimWorldWin64.exe）' }
     if (!$DshHome) { $DshHome = Read-Host 'DSH的Home目录（包含profiles文件夹，不是DSH程序目录）' }
     $GamePath = (Resolve-Path -LiteralPath $GamePath.Trim().Trim('"')).Path
     $DshHome = (Resolve-Path -LiteralPath $DshHome.Trim().Trim('"')).Path
+    if (!$Profile) {
+        $profiles = @(Get-ChildItem -LiteralPath (Join-Path $DshHome 'profiles') -Directory | Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'package.json') } | Select-Object -ExpandProperty Name)
+        if ($profiles.Count -eq 1) { $Profile = $profiles[0] }
+        else { $Profile = Read-Host ('请选择要安装的配置（网页端通常web，官方桌面版desktop）：' + ($profiles -join ', ')) }
+    }
     if (!(Test-Path -LiteralPath (Join-Path $GamePath 'RimWorldWin64.exe'))) { throw '选择的不是游戏目录。' }
     if ($Profile -notmatch '^[a-zA-Z0-9_-]+$' -or !(Test-Path -LiteralPath (Join-Path $DshHome "profiles\$Profile"))) { throw 'Home或Profile不正确，请先启动一次DSH。' }
     if (Get-Process RimWorldWin64 -ErrorAction SilentlyContinue) { throw '请先退出游戏，并完全退出DSH。' }

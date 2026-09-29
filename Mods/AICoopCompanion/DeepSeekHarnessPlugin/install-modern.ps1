@@ -1,11 +1,16 @@
 ﻿param(
     [Parameter(Mandatory=$true)][string]$DshUserRoot,
-    [string]$Profile = 'web',
+    [string]$Profile,
     [string]$PythonCommand = 'python.exe'
 )
 $ErrorActionPreference = 'Stop'
-if ($Profile -notmatch '^[a-zA-Z0-9_-]+$') { throw 'Invalid profile name.' }
 $root = (Resolve-Path -LiteralPath $DshUserRoot).Path
+if ([string]::IsNullOrWhiteSpace($Profile)) {
+    $profiles = @(Get-ChildItem -LiteralPath (Join-Path $root 'profiles') -Directory | Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'package.json') } | Select-Object -ExpandProperty Name)
+    if ($profiles.Count -ne 1) { throw ('Specify -Profile explicitly (web for browser, desktop for official desktop). Available: ' + ($profiles -join ', ')) }
+    $Profile = $profiles[0]
+}
+if ($Profile -notmatch '^[a-zA-Z0-9_-]+$') { throw 'Invalid profile name.' }
 $profileDir = Join-Path $root "profiles\$Profile"
 if (-not (Test-Path -LiteralPath $profileDir -PathType Container)) { throw 'Start this DSH profile once before installation.' }
 # DSH's loader calls import(name) directly for any name not starting with ".".
@@ -78,4 +83,4 @@ if ($existing.Contains($start)) {
     $updated = $existing.TrimEnd() + "`r`n" + $block + "`r`n"
 }
 [IO.File]::WriteAllText($path,$updated,[Text.UTF8Encoding]::new($false))
-Write-Host "Registered RimWorld preset in $path. Restart DSH and create a new session."
+Write-Host "Registered RimWorld preset in $path. Requires DSH 0.2.0 series or newer (tested: 0.2.0-rc.2). Restart DSH and create a new session."
