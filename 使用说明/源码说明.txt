@@ -1,4 +1,4 @@
-环世界AI队友 0.4.2 源码说明
+环世界AI队友 0.5.0 源码说明
 
 目录作用
 Mods/AICoopCompanion：完整Mod、资源与插件。
