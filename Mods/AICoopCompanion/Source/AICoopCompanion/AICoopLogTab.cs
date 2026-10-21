@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -69,6 +70,29 @@ namespace AICoopCompanion
             else DrawLogPage(body, component);
         }
 
+        // Unity removed TextEditor.ReplaceSelection in the Waylith-based RimWorld 1.7 runtime.
+        // Resolve it reflectively so one assembly keeps working on both 1.6 and 1.7+.
+        private static readonly System.Reflection.MethodInfo TextEditorReplaceSelection =
+            typeof(TextEditor).GetMethod("ReplaceSelection", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+        private static void InsertNewlineIntoEditor(TextEditor editor)
+        {
+            if (TextEditorReplaceSelection != null)
+            {
+                TextEditorReplaceSelection.Invoke(editor, new object[] { "\n" });
+                return;
+            }
+            // 1.7 fallback: splice the newline in ourselves and keep the caret after it.
+            string text = editor.text ?? "";
+            int len = text.Length;
+            int start = Math.Max(0, Math.Min(editor.selectIndex, len));
+            int end = Math.Max(0, Math.Min(editor.cursorIndex, len));
+            if (start > end) { int swap = start; start = end; end = swap; }
+            editor.text = text.Substring(0, start) + "\n" + text.Substring(end);
+            editor.cursorIndex = start + 1;
+            editor.selectIndex = start + 1;
+        }
+
         private void DrawChatPage(Rect rect, AICoopGameComponent component)
         {
             // Allocate the editor before variable-length chat history so its control ID stays stable.
@@ -99,7 +123,7 @@ namespace AICoopCompanion
                 {
                     // Keep the focused editor's text, selection and caret in sync after a newline.
                     editor.text = chatInput;
-                    editor.ReplaceSelection("\n");
+                    InsertNewlineIntoEditor(editor);
                     chatInput = editor.text;
                     GUI.changed = true;
                 }

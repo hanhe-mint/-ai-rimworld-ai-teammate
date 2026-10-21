@@ -2,7 +2,7 @@
 
 作者：寒荷mint
 
-**必须使用 DeepSeek Harness（DSH）0.2.0 系列及以上，不再支持 0.1.x；适用于 Windows 上的 RimWorld 1.6。** 本次验证版本为 0.2.0-rc.2，支持游戏所在 Windows 电脑上的网页端与官方桌面版。未来接口变更仍可能需要适配。DSH 需要自行安装，模型和 API 在 DSH 中配置；Harmony 作为独立前置模组启用，不要重复安装。
+**必须使用 DeepSeek Harness（DSH）0.2.0 系列及以上，不再支持 0.1.x；适用于 Windows 上的 RimWorld 1.6 / 1.7。** 本次验证版本为 0.2.0-rc.2，支持游戏所在 Windows 电脑上的网页端与官方桌面版。未来接口变更仍可能需要适配。DSH 需要自行安装，模型和 API 在 DSH 中配置；Harmony 作为独立前置模组启用，不要重复安装。
 
 接入deepseek harness，让deepseek加入你的殖民地，和你一起在环世界生存。 你和AI分别管理自己的殖民者，也可以开启共享控制。AI直接读取游戏数据，安排种植、采集、建造、生产、研究和战斗。你可以在游戏或Harness内和它聊天、提出需求，或回应它的求助。 支持房间预设、分阶段攻略、工具权限管理、决策间隔调整和思考时暂停。攻略进度及相关记录随存档保存。
 
@@ -28,6 +28,7 @@
 | `Mods/AICoopCompanion/Source/AICoopCompanion` | Mod 的 C# 源码与编译脚本。 |
 | `Mods/AICoopCompanion/Development/packages` | 编译依赖：C# 编译器、.NET 参考程序集和 Harmony 编译引用，不包含游戏程序集。 |
 | `使用说明` | 源码构建、上传方法、依赖说明和更新日志，统一为 TXT。 |
+| `使用说明/1.7兼容性普查报告.md` | 1.7 适配的完整技术记录：编译验证、耦合面清单、风险项与解决方案。 |
 | `Mods/AICoopCompanion/DeepSeekHarnessPlugin` | DSH 插件、Python CLI 工具、提示词及插件注册脚本，可直接编辑。 |
 | `Mods/AICoopCompanion/About` | Mod 名称、作者、简介和前置依赖等元数据。 |
 | `Mods/AICoopCompanion/Defs` | 游戏 XML 定义，如剧本、界面入口等。 |
@@ -40,13 +41,27 @@
 | `Tools` | 独立的房间预设和成品布局导出工具及源码，玩家包中与安装、卸载脚本并列，不复制进Mod。 |
 | `Mods/AICoopCompanion/成品` | 玩家自定义成品布局的说明与示例。 |
 
+## RimWorld 1.7 适配说明
+
+1.7 把游戏从 Unity 迁移到自研 Waylith 引擎（.NET 10 / CoreCLR）。官方称 Mod 无需改动，但实际编译验证发现两处必须修，已在 0.5.0 处理：
+
+**一、编译环境变了。** 1.6 的游戏程序集在 `RimWorldWin64_Data/Managed`，1.7 直接铺在游戏根目录；4 个 `UnityEngine.*.dll` 合并为 `UnityStubs.dll`；Mono 的 `mscorlib` 换成 .NET 10 的 `System.Private.CoreLib`。`build.ps1` 现在会自动识别两种布局，同一份源码在 1.6 和 1.7 下都能编译。
+
+**二、`TextEditor.ReplaceSelection` 在 1.7 中被移除。** 该 API 用于聊天框的 Shift+Enter 换行。已改为反射调用，运行时找不到就手动插入换行符，一份 DLL 同时兼容 1.6 与 1.7。
+
+其余 14000 余行代码未改动：26 个 Harmony 补丁、53 处私有成员反射、5 处 `UnityEngine` 直接引用，均通过 1.7 程序集编译并实机加载验证。`About.xml` 的 `supportedVersions` 现同时声明 1.6 与 1.7。
+
+完整的编译验证过程、耦合面清单与风险项见 [1.7 兼容性普查报告](使用说明/1.7兼容性普查报告.md)。
+
+1.7 目前位于 Steam 的 unstable 测试分支，主分支仍为 1.6。切分支可在 Steam 库右键游戏 → 属性 → 测试版中选择。
+
 ## 源码构建
 
-源码以独立文件直接保存在仓库，不需要下载源码版 ZIP。克隆仓库后运行根目录的 `编译Mod.cmd`，输入包含 `RimWorldWin64.exe` 的游戏目录。输出位于 `Mods/AICoopCompanion/Assemblies/AICoopCompanion.dll`。
+源码以独立文件直接保存在仓库，不需要下载源码版 ZIP。克隆仓库后运行根目录的 `编译Mod.cmd`，输入游戏目录（1.6 为包含 `RimWorldWin64.exe` 的目录，1.7 为包含 `RimWorld.exe` 的目录）。输出位于 `Mods/AICoopCompanion/Assemblies/AICoopCompanion.dll`。
 
 游戏 DLL、DSH 程序、个人配置、API 密钥及存档不随源码上传。修改 C# 后需重新编译并重启游戏；修改插件后需重启 DSH。
 
-查看 [0.4.2 开发日志](使用说明/开发日志.txt)。
+查看 [0.5.0 开发日志](使用说明/开发日志.txt)。
 
 ## 开源协议
 
